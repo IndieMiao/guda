@@ -221,6 +221,14 @@ function BagScanner:ScanSlot(bagID, slot)
     itemData.iLevel = iLevel
     itemData.type = itemType
     itemData.class = itemCategory
+    -- Override misclassified Quest items (e.g. Juju consumables) to Consumable
+    if itemCategory == "Quest" and itemLink and addon.Constants and addon.Constants.QUEST_CATEGORY_EXCLUSIONS then
+        local itemID = addon.Modules.Utils:ExtractItemID(itemLink)
+        if itemID and addon.Constants.QUEST_CATEGORY_EXCLUSIONS[itemID] then
+            itemData.class = "Consumable"
+            itemData.type = "Consumable"
+        end
+    end
     itemData.subclass = itemSubType
     itemData.equipSlot = itemEquipLoc
     itemData.locked = locked

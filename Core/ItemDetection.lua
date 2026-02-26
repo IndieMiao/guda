@@ -172,6 +172,17 @@ local function DetectQuestItem(lines, itemData)
     local isQuestItem = false
     local isQuestStarter = false
 
+    -- Early exit: exclude known non-quest items misclassified by the API
+    if itemData and itemData.link and addon.Constants and addon.Constants.QUEST_CATEGORY_EXCLUSIONS then
+        local _, _, idStr = string.find(itemData.link, "item:(%d+)")
+        if idStr then
+            local id = tonumber(idStr)
+            if id and addon.Constants.QUEST_CATEGORY_EXCLUSIONS[id] then
+                return false, false
+            end
+        end
+    end
+
     -- Check item category first
     if itemData and itemData.class == "Quest" then
         isQuestItem = true

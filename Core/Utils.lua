@@ -841,6 +841,11 @@ function Utils:IsQuestItem(bagID, slotID, itemData, isOtherChar, isBank)
         end
     end
 
+    -- Early exit: exclude known non-quest items that the API misclassifies as "Quest"
+    if itemID and addon.Constants and addon.Constants.QUEST_CATEGORY_EXCLUSIONS and addon.Constants.QUEST_CATEGORY_EXCLUSIONS[itemID] then
+        return false, false
+    end
+
     -- Check if item is equipment (should not be classified as quest unless explicitly Quest category)
     local isEquipment = (itemCategory == "Weapon" or itemCategory == "Armor" or
                          itemType == "Weapon" or itemType == "Armor")

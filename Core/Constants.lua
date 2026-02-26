@@ -81,6 +81,18 @@ C.PROFESSION_TOOL_IDS = {
     [20824] = true,  -- Simple Grinder
 }
 
+-- Items classified as "Quest" by GetItemInfo but are actually consumables
+-- These get reclassified as "Consumable" for category view and sorting
+C.QUEST_CATEGORY_EXCLUSIONS = {
+    [12450] = true, -- Juju Flurry
+    [12451] = true, -- Juju Power
+    [12455] = true, -- Juju Ember
+    [12457] = true, -- Juju Chill
+    [12458] = true, -- Juju Guile
+    [12459] = true, -- Juju Escape
+    [12460] = true, -- Juju Might
+}
+
 -- Weapon subtypes that should NOT be marked as junk
 C.PROFESSION_TOOL_SUBTYPES = {
     ["Fishing Pole"] = true,

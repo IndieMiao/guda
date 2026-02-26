@@ -800,7 +800,12 @@ local function AddSortKeys(items)
 					item.sortedClass = 1 -- All equippable gear gets priority class
 					item.equipSlotOrder = EQUIP_SLOT_ORDER[itemSubType] or 999
 				else
-					item.sortedClass = CATEGORY_ORDER[itemCategory] or 99
+					-- Override misclassified Quest items (e.g. Juju consumables) to Consumable
+					if itemCategory == "Quest" and (addon.Constants.QUEST_CATEGORY_EXCLUSIONS and addon.Constants.QUEST_CATEGORY_EXCLUSIONS[itemID]) then
+						item.sortedClass = CATEGORY_ORDER["Consumable"] or 2
+					else
+						item.sortedClass = CATEGORY_ORDER[itemCategory] or 99
+					end
 
 					-- Check if item is a permanent enchant (should NOT be Quest)
 					local itemProps = GetItemProperties(item.bagID, item.slot, item.data.link)
@@ -812,9 +817,10 @@ local function AddSortKeys(items)
 						item.sortedClass = 6  -- Same as Tools, comes before Quest (7)
 					-- Heuristic: Detect items that should be in the Quest category (priority 7)
 					-- but aren't categorized as such by the game (e.g. some "Manual" items)
-					elseif item.sortedClass ~= (CATEGORY_ORDER["Quest"] or 7) then
+					-- Skip items with a known non-Quest category (e.g. Consumable, Trade Goods)
+					elseif item.sortedClass ~= (CATEGORY_ORDER["Quest"] or 7) and not CATEGORY_ORDER[itemCategory] then
 						local nameLower = string.lower(item.itemName)
-						if string.find(nameLower, "manual") or string.find(nameLower, "quest") then
+						if string.find(nameLower, "manual") then
 							item.sortedClass = CATEGORY_ORDER["Quest"] or 7
 						elseif IsQuestItemTooltip(item.bagID, item.slot, item.data) then
 							item.sortedClass = CATEGORY_ORDER["Quest"] or 7
@@ -859,8 +865,8 @@ local function AddSortKeys(items)
 				item.isQuestUsable = false
 				item.isPermanentEnchant = isPermanentEnchant  -- Store for potential use in sorting
 				local nameLower = string.lower(item.itemName)
-				if not isPermanentEnchant then
-					if itemCategory == "Quest" or string.find(nameLower, "quest") or item.data.class == "Quest" or IsQuestItemTooltip(item.bagID, item.slot, item.data) then
+				if not isPermanentEnchant and not (addon.Constants.QUEST_CATEGORY_EXCLUSIONS and addon.Constants.QUEST_CATEGORY_EXCLUSIONS[itemID]) then
+					if itemCategory == "Quest" or item.data.class == "Quest" or IsQuestItemTooltip(item.bagID, item.slot, item.data) then
 						item.isQuest = true
 						if IsQuestItemStarter(item.bagID, item.slot, item.data) then item.isQuestStarter = true end
 						if IsQuestItemUsable(item.bagID, item.slot, item.data) then item.isQuestUsable = true end

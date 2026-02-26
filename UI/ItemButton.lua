@@ -85,6 +85,70 @@ local function IsQuestItem(bagID, slotID, isBank, itemData)
 end
 
 --=====================================================
+-- Inner Shadow (inset quality glow, GudaBags-inspired)
+-- 4 gradient textures along edges colored by item quality
+--=====================================================
+local INNER_SHADOW_SIZE = 4
+local INNER_SHADOW_ALPHA = 0.5
+
+-- Create the 4-edge inner shadow textures on a button, anchored to an icon texture
+local function CreateInnerShadow(button, anchorTo)
+    local shadow = {}
+    -- Top edge
+    shadow.top = button:CreateTexture(nil, "ARTWORK", nil, 1)
+    shadow.top:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", 0, 0)
+    shadow.top:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", 0, 0)
+    shadow.top:SetHeight(INNER_SHADOW_SIZE)
+    shadow.top:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    shadow.top:Hide()
+    -- Bottom edge
+    shadow.bottom = button:CreateTexture(nil, "ARTWORK", nil, 1)
+    shadow.bottom:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", 0, 0)
+    shadow.bottom:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", 0, 0)
+    shadow.bottom:SetHeight(INNER_SHADOW_SIZE)
+    shadow.bottom:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    shadow.bottom:Hide()
+    -- Left edge
+    shadow.left = button:CreateTexture(nil, "ARTWORK", nil, 1)
+    shadow.left:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", 0, 0)
+    shadow.left:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", 0, 0)
+    shadow.left:SetWidth(INNER_SHADOW_SIZE)
+    shadow.left:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    shadow.left:Hide()
+    -- Right edge
+    shadow.right = button:CreateTexture(nil, "ARTWORK", nil, 1)
+    shadow.right:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", 0, 0)
+    shadow.right:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", 0, 0)
+    shadow.right:SetWidth(INNER_SHADOW_SIZE)
+    shadow.right:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
+    shadow.right:Hide()
+    return shadow
+end
+
+-- Show inner shadow with a given quality color
+local function ShowInnerShadow(shadow, r, g, b)
+    if not shadow then return end
+    local a = INNER_SHADOW_ALPHA
+    shadow.top:SetGradientAlpha("VERTICAL", r, g, b, 0, r, g, b, a)
+    shadow.top:Show()
+    shadow.bottom:SetGradientAlpha("VERTICAL", r, g, b, a, r, g, b, 0)
+    shadow.bottom:Show()
+    shadow.left:SetGradientAlpha("HORIZONTAL", r, g, b, a, r, g, b, 0)
+    shadow.left:Show()
+    shadow.right:SetGradientAlpha("HORIZONTAL", r, g, b, 0, r, g, b, a)
+    shadow.right:Show()
+end
+
+-- Hide inner shadow
+local function HideInnerShadow(shadow)
+    if not shadow then return end
+    shadow.top:Hide()
+    shadow.bottom:Hide()
+    shadow.left:Hide()
+    shadow.right:Hide()
+end
+
+--=====================================================
 -- Junk Icon Pool (Baganator-inspired memory optimization)
 -- Uses frame pooling to avoid creating new frames per button
 --=====================================================
@@ -400,6 +464,14 @@ function Guda_ItemButton_OnLoad(self)
         self.qualityBorder = backdrop
     end
 
+    -- Create inner shadow for quality color glow (anchored to icon texture)
+    if not self.innerShadow then
+        local iconTex = getglobal(self:GetName() .. "IconTexture")
+        if iconTex then
+            self.innerShadow = CreateInnerShadow(self, iconTex)
+        end
+    end
+
     -- Create quest item border (golden, higher priority than quality border)
     if not self.questBorder then
         local questBackdrop = CreateFrame("Frame", nil, self)
@@ -564,6 +636,7 @@ local function ResetButtonVisualState(self)
     if self.questBorder then self.questBorder:Hide() end
     if self.questIcon then self.questIcon:Hide() end
     if self.qualityBorder then self.qualityBorder:Hide() end
+    HideInnerShadow(self.innerShadow)
     if self.unusableOverlay then self.unusableOverlay:Hide() end
     HideJunkIcon(self)
 
@@ -763,11 +836,13 @@ local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
         -- Special border for keyring items (cyan/blue)
         self.qualityBorder:SetBackdropBorderColor(0.2, 0.8, 1.0, 1)
         self.qualityBorder:Show()
+        ShowInnerShadow(self.innerShadow, 0.2, 0.8, 1.0)
         return
     end
 
     if not itemQuality then
         self.qualityBorder:Hide()
+        HideInnerShadow(self.innerShadow)
         return
     end
 
@@ -796,8 +871,10 @@ local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
         end
         self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
         self.qualityBorder:Show()
+        ShowInnerShadow(self.innerShadow, r, g, b)
     else
         self.qualityBorder:Hide()
+        HideInnerShadow(self.innerShadow)
     end
 end
 
@@ -852,8 +929,10 @@ local function ClearItemButton(self, emptySlotBg, countText, bagID)
         if bagID == -2 then
             self.qualityBorder:SetBackdropBorderColor(0.2, 0.8, 1.0, 0.5)
             self.qualityBorder:Show()
+            ShowInnerShadow(self.innerShadow, 0.2, 0.8, 1.0)
         else
             self.qualityBorder:Hide()
+            HideInnerShadow(self.innerShadow)
         end
     end
 
@@ -1176,12 +1255,13 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
             countText:Hide()
         end
 
-        -- Set quality border
+        -- Set quality border and inner shadow
         if self.qualityBorder then
             if bagID == -2 then
                 -- Special border for keyring items (cyan/blue)
                 self.qualityBorder:SetBackdropBorderColor(0.2, 0.8, 1.0, 1)
                 self.qualityBorder:Show()
+                ShowInnerShadow(self.innerShadow, 0.2, 0.8, 1.0)
             elseif itemQuality then
                 -- Check settings to determine if we should show borders
                 local showEquipmentBorder, showOtherBorder
@@ -1215,11 +1295,14 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                     end
                     self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
                     self.qualityBorder:Show()
+                    ShowInnerShadow(self.innerShadow, r, g, b)
                 else
                     self.qualityBorder:Hide()
+                    HideInnerShadow(self.innerShadow)
                 end
             else
                 self.qualityBorder:Hide()
+                HideInnerShadow(self.innerShadow)
             end
         end
 
@@ -1283,8 +1366,10 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
             if bagID == -2 then
                 self.qualityBorder:SetBackdropBorderColor(0.2, 0.8, 1.0, 0.5) -- Dimmer cyan for empty slots
                 self.qualityBorder:Show()
+                ShowInnerShadow(self.innerShadow, 0.2, 0.8, 1.0)
             else
                 self.qualityBorder:Hide()
+                HideInnerShadow(self.innerShadow)
             end
         end
 
@@ -1490,6 +1575,33 @@ function Guda_ItemButton_OnEnter(self)
 
 	GameTooltip:Show()
 
+	-- Debug: print item classification info to chat when debug mode is active
+	if addon.DEBUG and self.hasItem and self.bagID and self.slotID and not self._debugPrinted then
+		local link = self.itemData and self.itemData.link or GetContainerItemLink(self.bagID, self.slotID)
+		if link then
+			local itemID = addon.Modules.Utils:ExtractItemID(link)
+			if itemID then
+				local itemName, _, itemRarity, itemLevel, itemCategory, itemType, _, itemSubType = GetItemInfo(itemID)
+				addon:Debug("Item: %s (ID: %s)", tostring(itemName), tostring(itemID))
+				addon:Debug("  Category: %s | Type: %s | SubType: %s", tostring(itemCategory), tostring(itemType), tostring(itemSubType))
+				addon:Debug("  Quality: %s | iLvl: %s", tostring(itemRarity), tostring(itemLevel))
+				if addon.Modules.ItemDetection then
+					local props = addon.Modules.ItemDetection:GetItemProperties({link = link}, self.bagID, self.slotID)
+					local flags = {}
+					if props.isQuestItem then table.insert(flags, "Quest") end
+					if props.isQuestStarter then table.insert(flags, "Starter") end
+					if props.isQuestUsable then table.insert(flags, "Usable") end
+					if props.isJunk then table.insert(flags, "Junk") end
+					if props.isPermanentEnchant then table.insert(flags, "Enchant") end
+					if props.isUnusable then table.insert(flags, "Unusable") end
+					local flagStr = table.getn(flags) > 0 and table.concat(flags, ", ") or "none"
+					addon:Debug("  Flags: %s", flagStr)
+				end
+				self._debugPrinted = true
+			end
+		end
+	end
+
     -- Handle merchant sell cursor (same approach as BagShui)
 	if MerchantFrame:IsShown() and not self.isBank and not self.otherChar and self.hasItem then
 		ShowContainerSellCursor(self.bagID, self.slotID)
@@ -1501,6 +1613,7 @@ end
 
 -- OnLeave handler
 function Guda_ItemButton_OnLeave(self)
+    self._debugPrinted = nil
     -- Clear any viewed character hint on the tooltip when leaving
     if GameTooltip then
         GameTooltip.GudaViewedCharacter = nil
