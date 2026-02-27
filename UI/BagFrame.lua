@@ -2587,7 +2587,12 @@ function Guda_BagSlot_OnLoad(button, bagID)
 	-- Backpack (bag 0)
 		button.bagID = 0
 		button.hasItem = 1
-		SetItemButtonTexture(button, "Interface\\AddOns\\Guda\\Assets\\bags")
+		local hideBagline = addon.Modules.DB:GetSetting("hideBagline")
+		if hideBagline then
+			SetItemButtonTexture(button, "Interface\\AddOns\\Guda\\Assets\\bags")
+		else
+			SetItemButtonTexture(button, "Interface\\Buttons\\Button-Backpack-Up")
+		end
 	else
 	-- Bags 1-4
 		local invSlot = ContainerIDToInventoryID(bagID)
@@ -2654,8 +2659,13 @@ function Guda_BagSlot_Update(button, bagID)
 	local isHidden = hiddenBags[bagID]
 
 	if bagID == 0 then
-	-- Backpack always has the same texture
-		SetItemButtonTexture(button, "Interface\\AddOns\\Guda\\Assets\\bags")
+	-- Backpack texture depends on bagline setting
+		local hideBagline = addon.Modules.DB:GetSetting("hideBagline")
+		if hideBagline then
+			SetItemButtonTexture(button, "Interface\\AddOns\\Guda\\Assets\\bags")
+		else
+			SetItemButtonTexture(button, "Interface\\Buttons\\Button-Backpack-Up")
+		end
 		-- Dim if hidden
 		if isHidden then
 			SetItemButtonTextureVertexColor(button, 0.4, 0.4, 0.4)

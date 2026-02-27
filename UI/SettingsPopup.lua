@@ -949,6 +949,12 @@ function Guda_SettingsPopup_HoverBaglineCheckbox_OnClick(self)
         Guda.Modules.DB:SetSetting("hideBagline", isChecked)
     end
 
+    -- Update bag0 icon
+    local bag0 = getglobal("Guda_BagFrame_Toolbar_BagSlot0")
+    if bag0 then
+        Guda_BagSlot_Update(bag0, 0)
+    end
+
     -- Update bag frame
     local bagFrame = getglobal("Guda_BagFrame")
     if bagFrame and bagFrame:IsShown() then
