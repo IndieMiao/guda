@@ -946,7 +946,7 @@
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="100" y="-107"/>
+                            <AbsDimension x="100" y="-122"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -979,12 +979,12 @@
             <!-- Rules ScrollFrame -->
             <ScrollFrame name="Guda_CategoryEditor_RulesScrollFrame" inherits="FauxScrollFrameTemplate">
                 <Size>
-                    <AbsDimension x="335" y="250"/>
+                    <AbsDimension x="335" y="235"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOPLEFT">
                         <Offset>
-                            <AbsDimension x="20" y="-160"/>
+                            <AbsDimension x="20" y="-175"/>
                         </Offset>
                     </Anchor>
                 </Anchors>
@@ -1013,7 +1013,7 @@
                 <Anchors>
                     <Anchor point="TOPRIGHT">
                         <Offset>
-                            <AbsDimension x="-20" y="-142"/>
+                            <AbsDimension x="-20" y="-157"/>
                         </Offset>
                     </Anchor>
                 </Anchors>

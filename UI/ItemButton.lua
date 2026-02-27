@@ -1107,10 +1107,10 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
         countText:ClearAllPoints()
         if iconSize < 44 then
             -- Smaller offset for small icons
-            countText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -3, 3)
+            countText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -1, 1)
         else
             -- Standard offset for larger icons
-            countText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -8, 8)
+            countText:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -3, 3)
         end
     end
 
@@ -1228,7 +1228,7 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                 self.categoryMarkIcon = self:CreateTexture(nil, "OVERLAY")
             end
             -- Size relative to icon (roughly 40% of icon display size)
-            local markSize = math.max(10, math.floor(iconSize * 0.3)) + 1
+            local markSize = math.max(10, math.floor(iconSize * 0.3)) + 3
             local shadowSize = markSize + 2
             self.categoryMarkShadow:SetWidth(shadowSize)
             self.categoryMarkShadow:SetHeight(shadowSize)
