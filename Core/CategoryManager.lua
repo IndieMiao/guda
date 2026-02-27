@@ -293,7 +293,7 @@ local DEFAULT_CATEGORIES = {
                 { type = "isProfessionTool", value = true }
             },
             matchMode = "all",
-            priority = 60,
+            priority = 72,
             enabled = true,
             isBuiltIn = true,
             group = GROUP_OTHER,
@@ -541,6 +541,13 @@ function CategoryManager:MigrateCategories()
             classItemsCat.matchMode = "any"
             addon:Debug("CategoryManager: Added isSoulShard rule to Class Items")
         end
+    end
+
+    -- Migrate Tools priority: must be above Weapon (70) to catch fishing poles, skinning knives, etc.
+    local toolsCat = cats.definitions["Tools"]
+    if toolsCat and toolsCat.isBuiltIn and toolsCat.priority and toolsCat.priority < 72 then
+        toolsCat.priority = 72
+        addon:Debug("CategoryManager: Updated Tools priority to 72 (above Weapon/Armor)")
     end
 
     -- Ensure new categories in the order list are in correct positions
