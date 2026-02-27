@@ -491,6 +491,20 @@ function Utils:GetQualityColor(quality)
     return color.r, color.g, color.b
 end
 
+-- Extract RGB color from an item link's |cffRRGGBB prefix (the title color)
+-- Returns r, g, b (0-1 floats) or nil if no color found
+function Utils:GetLinkColor(itemLink)
+    if not itemLink then return nil end
+    -- Lua 5.0: use string.find with captures instead of string.match
+    local _, _, hex = string.find(itemLink, "|c(%x%x%x%x%x%x%x%x)")
+    if not hex then return nil end
+    -- hex is AARRGGBB
+    local r = tonumber(string.sub(hex, 3, 4), 16) / 255
+    local g = tonumber(string.sub(hex, 5, 6), 16) / 255
+    local b = tonumber(string.sub(hex, 7, 8), 16) / 255
+    return r, g, b
+end
+
 -- Create colored text
 function Utils:ColorText(text, r, g, b)
     local red = math.floor(r * 255)

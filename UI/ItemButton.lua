@@ -865,9 +865,18 @@ local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
     local shouldShowBorder = (isEquipment and showEquipmentBorder) or (not isEquipment and showOtherBorder)
 
     if shouldShowBorder then
-        local r, g, b = 1, 1, 1
-        if Utils and Utils.GetQualityColor then
-            r, g, b = Utils:GetQualityColor(itemQuality)
+        -- Use the item link's title color directly (matches what the player sees)
+        local r, g, b
+        if itemLink and Utils and Utils.GetLinkColor then
+            r, g, b = Utils:GetLinkColor(itemLink)
+        end
+        if not r then
+            -- Fallback to quality-based color
+            if Utils and Utils.GetQualityColor then
+                r, g, b = Utils:GetQualityColor(itemQuality)
+            else
+                r, g, b = 1, 1, 1
+            end
         end
         self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
         self.qualityBorder:Show()
@@ -1165,13 +1174,13 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
         -- Ensure itemData is populated for live items (needed for ItemDetection)
         if itemLink then
             local itemName, _, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture = GetItemInfo(itemLink)
-            -- For bank main bag, get quality from GetItemInfo
-            if self.isBank and bagID == -1 then
+            -- Always prefer GetItemInfo quality — GetContainerItemInfo often
+            -- returns wrong quality (e.g. 1/white) for epic tokens in TurtleWoW 1.12
+            if itemRarity then
                 itemQuality = itemRarity
-                -- Fall back to itemData.quality if GetItemInfo returned nil
-                if itemQuality == nil and itemData and itemData.quality then
-                    itemQuality = itemData.quality
-                end
+            end
+            if itemQuality == nil and itemData and itemData.quality then
+                itemQuality = itemData.quality
             end
             if not itemData then
                 -- Create new itemData
@@ -1306,10 +1315,17 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                 local shouldShowBorder = (isEquipment and showEquipmentBorder) or (not isEquipment and showOtherBorder)
 
                 if shouldShowBorder then
-                    -- Show colored border for all items (Poor, Common, Uncommon, Rare, Epic, etc.)
-                    local r, g, b = 1, 1, 1
-                    if Utils and Utils.GetQualityColor then
-                        r, g, b = Utils:GetQualityColor(itemQuality)
+                    -- Use the item link's title color directly (matches what the player sees)
+                    local r, g, b
+                    if itemLink and Utils and Utils.GetLinkColor then
+                        r, g, b = Utils:GetLinkColor(itemLink)
+                    end
+                    if not r then
+                        if Utils and Utils.GetQualityColor then
+                            r, g, b = Utils:GetQualityColor(itemQuality)
+                        else
+                            r, g, b = 1, 1, 1
+                        end
                     end
                     self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
                     self.qualityBorder:Show()
