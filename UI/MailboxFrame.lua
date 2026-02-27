@@ -73,6 +73,12 @@ end
 
 -- Update border visibility
 function MailboxFrame:UpdateBorderVisibility()
+    -- Use Theme module if available
+    if addon.Modules and addon.Modules.Theme then
+        addon.Modules.Theme:ApplyToFrame(Guda_MailboxFrame)
+        return
+    end
+
     local hideBorders = addon.Modules.DB:GetSetting("hideBorders")
     if hideBorders then
         Guda:ApplyBackdrop(Guda_MailboxFrame, "MINIMALIST_BORDER", "DEFAULT")

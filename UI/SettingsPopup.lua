@@ -151,6 +151,7 @@ function Guda_SettingsPopup_OnShow(self)
     local showTooltipCountsCheckbox = getglobal("Guda_SettingsPopup_ShowTooltipCountsCheckbox")
     local bagViewButton = getglobal("Guda_SettingsPopup_BagViewTypeButton")
     local bankViewButton = getglobal("Guda_SettingsPopup_BankViewTypeButton")
+    local themeButton = getglobal("Guda_SettingsPopup_ThemeButton")
 
     local showTooltipCounts = Guda.Modules.DB:GetSetting("showTooltipCounts")
     if showTooltipCounts == nil then
@@ -241,7 +242,11 @@ function Guda_SettingsPopup_OnShow(self)
         end
     end
 
-
+    -- Initialize theme button text
+    if themeButton then
+        local currentTheme = Guda.Modules.DB:GetSetting("theme") or "guda"
+        themeButton:SetText(currentTheme == "guda" and "Theme: Guda" or "Theme: Blizzard")
+    end
 
     -- Apply border visibility
     if SettingsPopup.UpdateBorderVisibility then
@@ -395,16 +400,21 @@ end
 
 -- Apply background transparency to bag and bank frames
 function Guda_ApplyBackgroundTransparency()
+    -- If Theme module is available, delegate to it (handles both themes correctly)
+    if Guda.Modules and Guda.Modules.Theme then
+        Guda.Modules.Theme:ApplyToAllFrames()
+        return
+    end
+
+    -- Fallback: original behavior
     local transparency = Guda.Modules.DB:GetSetting("bgTransparency") or 0.15
     local alpha = 1.0 - transparency
-    
+
     local frames = { "Guda_BagFrame", "Guda_BankFrame", "Guda_MailboxFrame", "Guda_SettingsPopup", "Guda_QuestItemBar" }
     for _, frameName in ipairs(frames) do
         local frame = getglobal(frameName)
         if frame then
-            -- Reset frame alpha to 1.0 (previous version might have set it)
             frame:SetAlpha(1.0)
-            -- Set backdrop color (background only)
             frame:SetBackdropColor(0, 0, 0, alpha)
         end
     end
@@ -684,37 +694,26 @@ function Guda_SettingsPopup_HideBordersCheckbox_OnClick(self)
         Guda.Modules.DB:SetSetting("hideBorders", isChecked)
     end
 
-    -- Update border visibility on both bag and bank frames using helper function
-    local bagFrame = getglobal("Guda_BagFrame")
-    if bagFrame then
-        if isChecked then
-            Guda:ApplyBackdrop(bagFrame, "MINIMALIST_BORDER", "DEFAULT")
-        else
-            Guda:ApplyBackdrop(bagFrame, "DEFAULT_FRAME", "DEFAULT")
+    -- Apply theme to all frames (respects hideBorders setting)
+    if Guda.Modules and Guda.Modules.Theme then
+        Guda.Modules.Theme:ApplyToAllFrames()
+    else
+        -- Fallback if theme module not loaded
+        local bagFrame = getglobal("Guda_BagFrame")
+        if bagFrame then
+            Guda:ApplyBackdrop(bagFrame, isChecked and "MINIMALIST_BORDER" or "DEFAULT_FRAME", "DEFAULT")
         end
-    end
-
-    local bankFrame = getglobal("Guda_BankFrame")
-    if bankFrame then
-        if isChecked then
-            Guda:ApplyBackdrop(bankFrame, "MINIMALIST_BORDER", "DEFAULT")
-        else
-            Guda:ApplyBackdrop(bankFrame, "DEFAULT_FRAME", "DEFAULT")
+        local bankFrame = getglobal("Guda_BankFrame")
+        if bankFrame then
+            Guda:ApplyBackdrop(bankFrame, isChecked and "MINIMALIST_BORDER" or "DEFAULT_FRAME", "DEFAULT")
         end
-    end
-
-    local mailboxFrame = getglobal("Guda_MailboxFrame")
-    if mailboxFrame then
-        if isChecked then
-            Guda:ApplyBackdrop(mailboxFrame, "MINIMALIST_BORDER", "DEFAULT")
-        else
-            Guda:ApplyBackdrop(mailboxFrame, "DEFAULT_FRAME", "DEFAULT")
+        local mailboxFrame = getglobal("Guda_MailboxFrame")
+        if mailboxFrame then
+            Guda:ApplyBackdrop(mailboxFrame, isChecked and "MINIMALIST_BORDER" or "DEFAULT_FRAME", "DEFAULT")
         end
-    end
-
-    -- Update border visibility on settings frame
-    if SettingsPopup.UpdateBorderVisibility then
-        SettingsPopup:UpdateBorderVisibility()
+        if SettingsPopup.UpdateBorderVisibility then
+            SettingsPopup:UpdateBorderVisibility()
+        end
     end
 end
 
@@ -1139,6 +1138,29 @@ function Guda_SettingsPopup_MarkUnusableCheckbox_OnClick(self)
     local bankFrame = getglobal("Guda_BankFrame")
     if bankFrame and bankFrame:IsShown() then
         Guda.Modules.BankFrame:Update()
+    end
+end
+
+-- Theme Button OnClick
+function Guda_SettingsPopup_ThemeButton_OnClick()
+    local current = Guda.Modules.DB:GetSetting("theme") or "guda"
+    local newValue = (current == "guda") and "blizzard" or "guda"
+    Guda.Modules.DB:SetSetting("theme", newValue)
+
+    -- Clear theme cache
+    if Guda.Modules.Theme then
+        Guda.Modules.Theme:ClearCache()
+    end
+
+    -- Update button text
+    local btn = getglobal("Guda_SettingsPopup_ThemeButton")
+    if btn then
+        btn:SetText(newValue == "guda" and "Theme: Guda" or "Theme: Blizzard")
+    end
+
+    -- Apply theme to all frames (also updates slot background alphas)
+    if Guda.Modules.Theme then
+        Guda.Modules.Theme:ApplyToAllFrames()
     end
 end
 

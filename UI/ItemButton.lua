@@ -918,8 +918,17 @@ local function ClearItemButton(self, emptySlotBg, countText, bagID)
 
     -- Show/hide empty slot background
     if emptySlotBg then
-        emptySlotBg:Show()
-        emptySlotBg:SetAlpha(0.5)
+        local slotAlpha = 0.5
+        if addon.Modules and addon.Modules.Theme then
+            local sa = addon.Modules.Theme:GetValue("slotBgAlpha")
+            if sa then slotAlpha = sa.empty end
+        end
+        if slotAlpha > 0 then
+            emptySlotBg:Show()
+            emptySlotBg:SetAlpha(slotAlpha)
+        else
+            emptySlotBg:Hide()
+        end
     end
 
     if countText then countText:Hide() end
@@ -1215,8 +1224,17 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
 
         -- Show bag pattern background behind items as well
         if emptySlotBg then
-            emptySlotBg:Show()
-            emptySlotBg:SetAlpha(0.3)  -- More subtle for filled slots
+            local slotAlpha = 0.3
+            if addon.Modules and addon.Modules.Theme then
+                local sa = addon.Modules.Theme:GetValue("slotBgAlpha")
+                if sa then slotAlpha = sa.filled end
+            end
+            if slotAlpha > 0 then
+                emptySlotBg:Show()
+                emptySlotBg:SetAlpha(slotAlpha)
+            else
+                emptySlotBg:Hide()
+            end
         end
 
         -- Check if item is junk using the CategoryManager
@@ -1346,8 +1364,17 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
 
         -- Show classic bag pattern background for empty slots
         if emptySlotBg then
-            emptySlotBg:Show()
-            emptySlotBg:SetAlpha(0.5)  -- Slightly more visible
+            local slotAlpha = 0.5
+            if addon.Modules and addon.Modules.Theme then
+                local sa = addon.Modules.Theme:GetValue("slotBgAlpha")
+                if sa then slotAlpha = sa.empty end
+            end
+            if slotAlpha > 0 then
+                emptySlotBg:Show()
+                emptySlotBg:SetAlpha(slotAlpha)
+            else
+                emptySlotBg:Hide()
+            end
         end
 
         -- Dim empty slots when searching

@@ -14,18 +14,6 @@
             </Anchor>
         </Anchors>
 
-        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
-            <BackgroundInsets>
-                <AbsInset left="11" right="12" top="12" bottom="11"/>
-            </BackgroundInsets>
-            <TileSize>
-                <AbsValue val="32"/>
-            </TileSize>
-            <EdgeSize>
-                <AbsValue val="32"/>
-            </EdgeSize>
-        </Backdrop>
-
         <Layers>
             <!-- Title -->
             <Layer level="ARTWORK">
@@ -203,15 +191,28 @@
                     </Anchor>
                 </Anchors>
                 <Frames>
+                    <!-- Theme Toggle Button -->
+                    <Button name="Guda_SettingsPopup_ThemeButton" inherits="UIPanelButtonTemplate">
+                        <Size><AbsDimension x="180" y="25"/></Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset><AbsDimension x="5" y="-15"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>Guda_SettingsPopup_ThemeButton_OnClick()</OnClick>
+                        </Scripts>
+                    </Button>
+
                     <!-- Bag Columns Slider -->
                     <Slider name="Guda_SettingsPopup_BagColumnsSlider" inherits="OptionsSliderTemplate">
                         <Size>
                             <AbsDimension x="450" y="17"/>
                         </Size>
                         <Anchors>
-                            <Anchor point="TOPLEFT">
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ThemeButton">
                                 <Offset>
-                                    <AbsDimension x="5" y="-40"/>
+                                    <AbsDimension x="0" y="-25"/>
                                 </Offset>
                             </Anchor>
                         </Anchors>
@@ -818,18 +819,6 @@
                 </Offset>
             </Anchor>
         </Anchors>
-
-        <Backdrop bgFile="Interface\DialogFrame\UI-DialogBox-Background" edgeFile="Interface\DialogFrame\UI-DialogBox-Border" tile="true">
-            <BackgroundInsets>
-                <AbsInset left="11" right="12" top="12" bottom="11"/>
-            </BackgroundInsets>
-            <TileSize>
-                <AbsValue val="32"/>
-            </TileSize>
-            <EdgeSize>
-                <AbsValue val="32"/>
-            </EdgeSize>
-        </Backdrop>
 
         <Layers>
             <Layer level="ARTWORK">

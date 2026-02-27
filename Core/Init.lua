@@ -194,7 +194,15 @@ function Guda_ToggleBank()
 end
 
 -- Helper to apply backdrop with color
+-- For main frames (DEFAULT_FRAME / MINIMALIST_BORDER), delegates to Theme module when available.
+-- Explicit types like "DROPDOWN" bypass theming.
 function addon:ApplyBackdrop(frame, backdropType, colorType)
+    -- For main frame backdrop types, use Theme module if available
+    if (backdropType == "DEFAULT_FRAME" or backdropType == "MINIMALIST_BORDER") and self.Modules and self.Modules.Theme then
+        self.Modules.Theme:ApplyToFrame(frame)
+        return
+    end
+
     local backdrop = self.Constants.Backdrops[backdropType]
     local color = self.Constants.BackdropColors[colorType or "DEFAULT"]
 
@@ -205,18 +213,7 @@ function addon:ApplyBackdrop(frame, backdropType, colorType)
     end
 
     frame:SetBackdrop(backdrop)
-    
-    -- If it's a main frame, we should respect the transparency setting
-    local frameName = frame:GetName()
-    if frameName == "Guda_BagFrame" or frameName == "Guda_BankFrame" or frameName == "Guda_SettingsPopup" or frameName == "Guda_QuestItemBar" then
-        if Guda_ApplyBackgroundTransparency then
-            Guda_ApplyBackgroundTransparency()
-        else
-            frame:SetBackdropColor(color.r, color.g, color.b, color.a)
-        end
-    else
-        frame:SetBackdropColor(color.r, color.g, color.b, color.a)
-    end
+    frame:SetBackdropColor(color.r, color.g, color.b, color.a)
 
     -- Set border color to white for minimalist borders
     if backdropType == "MINIMALIST_BORDER" then

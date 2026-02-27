@@ -2352,6 +2352,12 @@ function BagFrame:UpdateBorderVisibility()
 	local frame = getglobal("Guda_BagFrame")
 	if not frame then return end
 
+	-- Use Theme module if available
+	if addon.Modules.Theme then
+		addon.Modules.Theme:ApplyToFrame(frame)
+		return
+	end
+
 	local hideBorders = addon.Modules.DB:GetSetting("hideBorders")
 	if hideBorders == nil then
 		hideBorders = false
