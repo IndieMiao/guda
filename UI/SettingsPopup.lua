@@ -6,6 +6,23 @@ local addon = Guda
 local SettingsPopup = {}
 addon.Modules.SettingsPopup = SettingsPopup
 
+-- Section header helper: creates gold-colored section label with separator line
+local function CreateSectionHeader(parent, text, yOffset)
+    local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    label:SetPoint("TOPLEFT", parent, "TOPLEFT", 5, yOffset)
+    label:SetText(text)
+    label:SetTextColor(1, 0.82, 0, 1)
+
+    -- Separator line extending from label to the right edge
+    local line = parent:CreateTexture(nil, "ARTWORK")
+    line:SetHeight(1)
+    line:SetPoint("LEFT", label, "RIGHT", 8, 0)
+    line:SetPoint("RIGHT", parent, "RIGHT", -5, 0)
+    line:SetTexture(1, 0.82, 0, 0.3)
+
+    return label
+end
+
 -- Global function to open settings (called from XML)
 function Guda_OpenSettings()
     local frame = getglobal("Guda_SettingsPopup")
@@ -40,47 +57,71 @@ function Guda_SettingsPopup_OnLoad(self)
         instructions:SetText(text)
     end
 
+    -- Create section headers for each tab
+    local generalTab = getglobal("Guda_SettingsPopup_GeneralTab")
+    if generalTab then
+        CreateSectionHeader(generalTab, "Appearance", -12)
+        CreateSectionHeader(generalTab, "Options", -120)
+    end
+
+    local layoutTab = getglobal("Guda_SettingsPopup_LayoutTab")
+    if layoutTab then
+        CreateSectionHeader(layoutTab, "View", -12)
+        CreateSectionHeader(layoutTab, "Columns", -72)
+        CreateSectionHeader(layoutTab, "Options", -190)
+    end
+
+    local iconsTab = getglobal("Guda_SettingsPopup_IconsTab")
+    if iconsTab then
+        CreateSectionHeader(iconsTab, "Icon", -12)
+        CreateSectionHeader(iconsTab, "Icon Options", -190)
+    end
+
+    local barTab = getglobal("Guda_SettingsPopup_BarTab")
+    if barTab then
+        CreateSectionHeader(barTab, "Quest Bar", -12)
+        CreateSectionHeader(barTab, "Tracked", -120)
+    end
+
     Guda:Debug("Settings popup loaded")
 end
 
 -- Tab switching logic (GudaPlates style)
 function Guda_SettingsPopup_SelectTab(tabName)
     -- Hide all tab content frames
-    local generalTab = getglobal("Guda_SettingsPopup_GeneralTab")
-    local iconsTab = getglobal("Guda_SettingsPopup_IconsTab")
-    local categoriesTab = getglobal("Guda_SettingsPopup_CategoriesTab")
-    local guideTab = getglobal("Guda_SettingsPopup_GuideTab")
+    local tabs = {
+        general = getglobal("Guda_SettingsPopup_GeneralTab"),
+        layout = getglobal("Guda_SettingsPopup_LayoutTab"),
+        icons = getglobal("Guda_SettingsPopup_IconsTab"),
+        bar = getglobal("Guda_SettingsPopup_BarTab"),
+        categories = getglobal("Guda_SettingsPopup_CategoriesTab"),
+        guide = getglobal("Guda_SettingsPopup_GuideTab"),
+    }
 
-    if generalTab then generalTab:Hide() end
-    if iconsTab then iconsTab:Hide() end
-    if categoriesTab then categoriesTab:Hide() end
-    if guideTab then guideTab:Hide() end
+    local bgs = {
+        general = getglobal("Guda_SettingsPopup_GeneralTabButton_Bg"),
+        layout = getglobal("Guda_SettingsPopup_LayoutTabButton_Bg"),
+        icons = getglobal("Guda_SettingsPopup_IconsTabButton_Bg"),
+        bar = getglobal("Guda_SettingsPopup_BarTabButton_Bg"),
+        categories = getglobal("Guda_SettingsPopup_CategoriesTabButton_Bg"),
+        guide = getglobal("Guda_SettingsPopup_GuideTabButton_Bg"),
+    }
 
-    -- Reset all tab button backgrounds to inactive (0.1 alpha)
-    local generalBg = getglobal("Guda_SettingsPopup_GeneralTabButton_Bg")
-    local iconsBg = getglobal("Guda_SettingsPopup_IconsTabButton_Bg")
-    local categoriesBg = getglobal("Guda_SettingsPopup_CategoriesTabButton_Bg")
-    local guideBg = getglobal("Guda_SettingsPopup_GuideTabButton_Bg")
-
-    if generalBg then generalBg:SetTexture(1, 1, 1, 0.1) end
-    if iconsBg then iconsBg:SetTexture(1, 1, 1, 0.1) end
-    if categoriesBg then categoriesBg:SetTexture(1, 1, 1, 0.1) end
-    if guideBg then guideBg:SetTexture(1, 1, 1, 0.1) end
+    -- Hide all tabs and reset backgrounds
+    for _, tab in pairs(tabs) do
+        if tab then tab:Hide() end
+    end
+    for _, bg in pairs(bgs) do
+        if bg then bg:SetTexture(1, 1, 1, 0.1) end
+    end
 
     -- Show selected tab and highlight its button
-    if tabName == "general" then
-        if generalTab then generalTab:Show() end
-        if generalBg then generalBg:SetTexture(1, 1, 1, 0.3) end
-    elseif tabName == "icons" then
-        if iconsTab then iconsTab:Show() end
-        if iconsBg then iconsBg:SetTexture(1, 1, 1, 0.3) end
-    elseif tabName == "categories" then
-        if categoriesTab then categoriesTab:Show() end
-        if categoriesBg then categoriesBg:SetTexture(1, 1, 1, 0.3) end
+    if tabs[tabName] then tabs[tabName]:Show() end
+    if bgs[tabName] then bgs[tabName]:SetTexture(1, 1, 1, 0.3) end
+
+    -- Special handling for categories tab
+    if tabName == "categories" then
         Guda_SettingsPopup_CategoriesTab_Update()
-    elseif tabName == "guide" then
-        if guideTab then guideTab:Show() end
-        if guideBg then guideBg:SetTexture(1, 1, 1, 0.3) end
     end
 end
 
@@ -149,6 +190,8 @@ function Guda_SettingsPopup_OnShow(self)
     local hoverBaglineCheckbox = getglobal("Guda_SettingsPopup_HoverBaglineCheckbox")
     local hideFooterCheckbox = getglobal("Guda_SettingsPopup_HideFooterCheckbox")
     local showTooltipCountsCheckbox = getglobal("Guda_SettingsPopup_ShowTooltipCountsCheckbox")
+    local showEquipSetCategoriesCheckbox = getglobal("Guda_SettingsPopup_ShowEquipSetCategoriesCheckbox")
+    local markEquipmentSetsCheckbox = getglobal("Guda_SettingsPopup_MarkEquipmentSetsCheckbox")
     local bagViewButton = getglobal("Guda_SettingsPopup_BagViewTypeButton")
     local bankViewButton = getglobal("Guda_SettingsPopup_BankViewTypeButton")
     local themeButton = getglobal("Guda_SettingsPopup_ThemeButton")
@@ -224,6 +267,19 @@ function Guda_SettingsPopup_OnShow(self)
 
     if showTooltipCountsCheckbox then
         showTooltipCountsCheckbox:SetChecked(showTooltipCounts and 1 or 0)
+    end
+
+    -- New checkboxes
+    local showEquipSetCategories = Guda.Modules.DB:GetSetting("showEquipSetCategories")
+    if showEquipSetCategories == nil then showEquipSetCategories = true end
+    if showEquipSetCategoriesCheckbox then
+        showEquipSetCategoriesCheckbox:SetChecked(showEquipSetCategories and 1 or 0)
+    end
+
+    local markEquipmentSets = Guda.Modules.DB:GetSetting("markEquipmentSets")
+    if markEquipmentSets == nil then markEquipmentSets = true end
+    if markEquipmentSetsCheckbox then
+        markEquipmentSetsCheckbox:SetChecked(markEquipmentSets and 1 or 0)
     end
 
     if bagViewButton then
@@ -621,7 +677,7 @@ end
 function Guda_SettingsPopup_LockBagsCheckbox_OnLoad(self)
     local text = getglobal(self:GetName().."Text")
     if text then
-        text:SetText("Lock Bags")
+        text:SetText("Lock Window")
 
         -- Increase font size
         local font, _, flags = text:GetFont()
@@ -656,6 +712,11 @@ function Guda_SettingsPopup_LockBagsCheckbox_OnClick(self)
     -- Update bag frame draggability
     if Guda and Guda.Modules and Guda.Modules.BagFrame and Guda.Modules.BagFrame.UpdateLockState then
         Guda.Modules.BagFrame:UpdateLockState()
+    end
+
+    -- Update bank frame draggability
+    if Guda and Guda.Modules and Guda.Modules.BankFrame and Guda.Modules.BankFrame.UpdateLockState then
+        Guda.Modules.BankFrame:UpdateLockState()
     end
 end
 
@@ -1137,6 +1198,90 @@ function Guda_SettingsPopup_MarkUnusableCheckbox_OnClick(self)
     end
 
     -- Update bag and bank frames to apply/remove the red tint
+    local bagFrame = getglobal("Guda_BagFrame")
+    if bagFrame and bagFrame:IsShown() then
+        Guda.Modules.BagFrame:Update()
+    end
+
+    local bankFrame = getglobal("Guda_BankFrame")
+    if bankFrame and bankFrame:IsShown() then
+        Guda.Modules.BankFrame:Update()
+    end
+end
+
+-- Show Equipment Set Categories Checkbox OnLoad
+function Guda_SettingsPopup_ShowEquipSetCategoriesCheckbox_OnLoad(self)
+    local text = getglobal(self:GetName().."Text")
+    if text then
+        text:SetText("Equip Set Categories")
+
+        local font, _, flags = text:GetFont()
+        if font then
+            text:SetFont(font, 13, flags)
+        end
+    end
+
+    self.tooltipText = "Show equipment set categories in category view."
+
+    local enabled = true
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        enabled = Guda.Modules.DB:GetSetting("showEquipSetCategories")
+        if enabled == nil then enabled = true end
+    end
+
+    self:SetChecked(enabled and 1 or 0)
+end
+
+-- Show Equipment Set Categories Checkbox OnClick
+function Guda_SettingsPopup_ShowEquipSetCategoriesCheckbox_OnClick(self)
+    local isChecked = self:GetChecked() == 1
+
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        Guda.Modules.DB:SetSetting("showEquipSetCategories", isChecked)
+    end
+
+    local bagFrame = getglobal("Guda_BagFrame")
+    if bagFrame and bagFrame:IsShown() then
+        Guda.Modules.BagFrame:Update()
+    end
+
+    local bankFrame = getglobal("Guda_BankFrame")
+    if bankFrame and bankFrame:IsShown() then
+        Guda.Modules.BankFrame:Update()
+    end
+end
+
+-- Mark Equipment Sets Checkbox OnLoad
+function Guda_SettingsPopup_MarkEquipmentSetsCheckbox_OnLoad(self)
+    local text = getglobal(self:GetName().."Text")
+    if text then
+        text:SetText("Mark Equipment Sets")
+
+        local font, _, flags = text:GetFont()
+        if font then
+            text:SetFont(font, 13, flags)
+        end
+    end
+
+    self.tooltipText = "Show a special icon on items that belong to an equipment set."
+
+    local enabled = true
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        enabled = Guda.Modules.DB:GetSetting("markEquipmentSets")
+        if enabled == nil then enabled = true end
+    end
+
+    self:SetChecked(enabled and 1 or 0)
+end
+
+-- Mark Equipment Sets Checkbox OnClick
+function Guda_SettingsPopup_MarkEquipmentSetsCheckbox_OnClick(self)
+    local isChecked = self:GetChecked() == 1
+
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        Guda.Modules.DB:SetSetting("markEquipmentSets", isChecked)
+    end
+
     local bagFrame = getglobal("Guda_BagFrame")
     if bagFrame and bagFrame:IsShown() then
         Guda.Modules.BagFrame:Update()

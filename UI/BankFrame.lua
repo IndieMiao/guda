@@ -186,6 +186,11 @@ function Guda_BankFrame_OnShow(self)
 		Guda_ApplyBackgroundTransparency()
 	end
 
+	-- Apply lock state
+	if BankFrame.UpdateLockState then
+		BankFrame:UpdateLockState()
+	end
+
    	BankFrame:Update()
 
     -- Schedule deferred usability check to fix false positives from uncached item data
@@ -257,6 +262,65 @@ end
 -- Update lock states of existing buttons (lightweight, used during drag)
 function BankFrame:UpdateLockStates()
     Guda_UpdateLockStates(bankBagParents)
+end
+
+-- Update window lock state (enable/disable dragging)
+function BankFrame:UpdateLockState()
+    if not addon or not addon.Modules or not addon.Modules.DB then return end
+
+    local frame = getglobal("Guda_BankFrame")
+    if not frame then return end
+
+    local isLocked = addon.Modules.DB:GetSetting("lockBags")
+    if isLocked == nil then isLocked = false end
+
+    local toolbar = getglobal("Guda_BankFrame_Toolbar")
+
+    if isLocked then
+        if frame.SetScript then
+            frame:SetScript("OnMouseDown", function()
+                local searchBox = getglobal("Guda_BankFrame_SearchBar_SearchBox")
+                if searchBox then searchBox:ClearFocus() end
+            end)
+            frame:SetScript("OnMouseUp", nil)
+        end
+        if toolbar and toolbar.SetScript then
+            toolbar:SetScript("OnMouseDown", function()
+                local searchBox = getglobal("Guda_BankFrame_SearchBar_SearchBox")
+                if searchBox then searchBox:ClearFocus() end
+            end)
+            toolbar:SetScript("OnMouseUp", nil)
+        end
+    else
+        if frame and frame.SetScript then
+            frame:SetScript("OnMouseDown", function()
+                local searchBox = getglobal("Guda_BankFrame_SearchBar_SearchBox")
+                if searchBox then searchBox:ClearFocus() end
+                local bankFrame = getglobal("Guda_BankFrame")
+                if bankFrame and arg1 == "LeftButton" then
+                    bankFrame:StartMoving()
+                end
+            end)
+            frame:SetScript("OnMouseUp", function()
+                local bankFrame = getglobal("Guda_BankFrame")
+                if bankFrame then bankFrame:StopMovingOrSizing() end
+            end)
+        end
+        if toolbar and toolbar.SetScript then
+            toolbar:SetScript("OnMouseDown", function()
+                local searchBox = getglobal("Guda_BankFrame_SearchBar_SearchBox")
+                if searchBox then searchBox:ClearFocus() end
+                local bankFrame = getglobal("Guda_BankFrame")
+                if bankFrame and arg1 == "LeftButton" then
+                    bankFrame:StartMoving()
+                end
+            end)
+            toolbar:SetScript("OnMouseUp", function()
+                local bankFrame = getglobal("Guda_BankFrame")
+                if bankFrame then bankFrame:StopMovingOrSizing() end
+            end)
+        end
+    end
 end
 
 -- Update a single slot without full frame redraw (used for manual item moves)
