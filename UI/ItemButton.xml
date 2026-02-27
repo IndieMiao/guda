@@ -7,7 +7,16 @@
         </Size>
 
         <Layers>
-            <!-- Empty slot background texture (classic bag pattern) -->
+            <!-- Quality color ring (slightly larger UI-EmptySlot behind the normal one) -->
+            <Layer level="BACKGROUND" textureSubLevel="-1">
+                <Texture name="$parent_QualityRing" file="Interface\Buttons\UI-EmptySlot" hidden="true">
+                    <Anchors>
+                        <Anchor point="TOPLEFT"/>
+                        <Anchor point="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+            <!-- Empty slot background texture (classic bag pattern, covers center of quality ring) -->
             <Layer level="BACKGROUND">
                 <Texture name="$parent_EmptySlotBg" file="Interface\Buttons\UI-EmptySlot" hidden="false">
                     <Anchors>

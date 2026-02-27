@@ -1611,6 +1611,7 @@ local MARK_ICONS = {
     "Interface\\AddOns\\Guda\\Assets\\fav",
     "Interface\\AddOns\\Guda\\Assets\\combat",
     "Interface\\AddOns\\Guda\\Assets\\Cog",
+    "Interface\\AddOns\\Guda\\Assets\\guild",
 }
 local RULE_ROW_HEIGHT = 28
 local MAX_RULES = 22
@@ -1686,7 +1687,7 @@ function Guda_CategoryEditor_OnLoad(self)
         local MARK_BTN_SPACING = 6
 
         local markLabel = self:CreateFontString("Guda_CategoryEditor_MarkLabel", "OVERLAY", "GameFontNormalSmall")
-        markLabel:SetPoint("TOPLEFT", self, "TOPLEFT", 20, -68)
+        markLabel:SetPoint("TOPLEFT", self, "TOPLEFT", 20, -78)
         markLabel:SetText("Mark:")
         markLabel:SetTextColor(0.7, 0.7, 0.7)
 

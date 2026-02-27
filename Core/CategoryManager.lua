@@ -1032,8 +1032,9 @@ function CategoryManager:CategorizeItem(itemData, bagID, slotID, isOtherChar)
     cacheMisses = cacheMisses + 1
 
     -- Check item overrides first (flat map: itemID -> categoryId)
+    local itemID
     if itemData and itemData.link then
-        local itemID = addon.Modules.Utils:ExtractItemID(itemData.link)
+        itemID = addon.Modules.Utils:ExtractItemID(itemData.link)
         if itemID then
             local cats = self:GetCategories()
             if cats.itemOverrides then
@@ -1045,6 +1046,27 @@ function CategoryManager:CategorizeItem(itemData, bagID, slotID, isOtherChar)
                             categoryCache[cacheKey] = overrideCatId
                         end
                         return overrideCatId
+                    end
+                end
+            end
+        end
+    end
+
+    -- Equipment set categories (higher priority than rule-based matching)
+    if itemID and addon.Modules.EquipmentSets then
+        local showEquipSets = addon.Modules.DB:GetSetting("showEquipSetCategories")
+        if showEquipSets ~= false then
+            if addon.Modules.EquipmentSets:IsInSet(itemID) then
+                local setNames = addon.Modules.EquipmentSets:GetSetNames(itemID)
+                if setNames and table.getn(setNames) > 0 then
+                    table.sort(setNames)
+                    local catId = "EquipSet:" .. setNames[1]
+                    local catDef = self:GetCategory(catId)
+                    if catDef and catDef.enabled then
+                        if cacheKey then
+                            categoryCache[cacheKey] = catId
+                        end
+                        return catId
                     end
                 end
             end

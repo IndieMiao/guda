@@ -149,6 +149,41 @@ local function HideInnerShadow(shadow)
 end
 
 --=====================================================
+-- Quality/Quest Border — uses a second UI-EmptySlot
+-- texture (QualityRing) placed slightly larger behind
+-- the normal EmptySlotBg. The 2px gap between them
+-- creates a thin rounded border ring, since both share
+-- the same rounded corner artwork.
+--=====================================================
+local QUALITY_RING_EXTEND = 11  -- QualityRing extends 11px past button
+local SLOT_BG_EXTEND = 9       -- EmptySlotBg extends 9px past button (2px visible border)
+
+-- Show quality ring with color
+local function TintSlotBorder(button, r, g, b)
+    local ring = getglobal(button:GetName().."_QualityRing")
+    if ring then
+        ring:ClearAllPoints()
+        ring:SetPoint("TOPLEFT", button, "TOPLEFT", -QUALITY_RING_EXTEND, QUALITY_RING_EXTEND)
+        ring:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", QUALITY_RING_EXTEND, -QUALITY_RING_EXTEND)
+        ring:SetTexCoord(0, 1, 0, 1)
+        ring:SetVertexColor(r, g, b)
+        ring:SetAlpha(1)
+        ring:Show()
+        button._borderTinted = true
+    end
+end
+
+-- Hide quality ring
+local function ResetSlotBorder(button)
+    if not button._borderTinted then return end
+    local ring = getglobal(button:GetName().."_QualityRing")
+    if ring then
+        ring:Hide()
+        button._borderTinted = false
+    end
+end
+
+--=====================================================
 -- Junk Icon Pool (Baganator-inspired memory optimization)
 -- Uses frame pooling to avoid creating new frames per button
 --=====================================================
@@ -448,43 +483,12 @@ function Guda_ItemButton_OnLoad(self)
     self.isBank = false
     self.otherChar = nil
 
-    -- Create backdrop for quality border with rounded corners
-    -- Will be positioned relative to icon later
-    if not self.qualityBorder then
-        local backdrop = CreateFrame("Frame", nil, self)
-        backdrop:SetFrameLevel(self:GetFrameLevel() + 5)
-        backdrop:SetBackdrop({
-            bgFile = nil,
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            edgeSize = 12,
-            insets = {left = 4, right = 4, top = 4, bottom = 4}
-        })
-        backdrop:SetBackdropBorderColor(0, 0, 0, 0) -- Hidden by default
-        backdrop:Hide()
-        self.qualityBorder = backdrop
-    end
-
     -- Create inner shadow for quality color glow (anchored to icon texture)
     if not self.innerShadow then
         local iconTex = getglobal(self:GetName() .. "IconTexture")
         if iconTex then
             self.innerShadow = CreateInnerShadow(self, iconTex)
         end
-    end
-
-    -- Create quest item border (golden, higher priority than quality border)
-    if not self.questBorder then
-        local questBackdrop = CreateFrame("Frame", nil, self)
-        questBackdrop:SetFrameLevel(self:GetFrameLevel() + 6)  -- Higher than quality border
-        questBackdrop:SetBackdrop({
-            bgFile = nil,
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            edgeSize = 12,
-            insets = {left = 4, right = 4, top = 4, bottom = 4}
-        })
-        questBackdrop:SetBackdropBorderColor(1.0, 0.82, 0, 1) -- Golden color
-        questBackdrop:Hide()
-        self.questBorder = questBackdrop
     end
 
     -- Create quest icon overlay (exclamation mark in corner)
@@ -633,9 +637,8 @@ end
 
 -- Reset all visual state on a button (for reuse from pool)
 local function ResetButtonVisualState(self)
-    if self.questBorder then self.questBorder:Hide() end
     if self.questIcon then self.questIcon:Hide() end
-    if self.qualityBorder then self.qualityBorder:Hide() end
+    ResetSlotBorder(self)
     HideInnerShadow(self.innerShadow)
     if self.unusableOverlay then self.unusableOverlay:Hide() end
     HideJunkIcon(self)
@@ -739,10 +742,12 @@ end
 local function UpdateEmptySlotBackground(self, emptySlotBg, iconSize)
     if not emptySlotBg then return end
 
+    -- Extend 9px past button edges so the rounded corners of UI-EmptySlot
+    -- cover the square corners of the icon texture (same as GudaBags)
     emptySlotBg:ClearAllPoints()
-    emptySlotBg:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
-    emptySlotBg:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
-    emptySlotBg:SetTexCoord(0.17, 0.83, 0.17, 0.83)
+    emptySlotBg:SetPoint("TOPLEFT", self, "TOPLEFT", -9, 9)
+    emptySlotBg:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 9, -9)
+    emptySlotBg:SetTexCoord(0, 1, 0, 1)
 end
 
 -- Resize texture elements to match button size
@@ -800,22 +805,8 @@ local function PositionIconAndBorders(self, iconSize)
     iconTexture:SetPoint("CENTER", self, "CENTER", 0, 0)
     iconTexture:SetWidth(iconDisplaySize)
     iconTexture:SetHeight(iconDisplaySize)
-    iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    iconTexture:SetTexCoord(0, 1, 0, 1)
     iconTexture:Show()
-
-    -- Position quality border around the icon
-    if self.qualityBorder then
-        self.qualityBorder:ClearAllPoints()
-        self.qualityBorder:SetPoint("TOPLEFT", iconTexture, "TOPLEFT", -1, 1)
-        self.qualityBorder:SetPoint("BOTTOMRIGHT", iconTexture, "BOTTOMRIGHT", 1, -1)
-    end
-
-    -- Position quest border around the icon
-    if self.questBorder then
-        self.questBorder:ClearAllPoints()
-        self.questBorder:SetPoint("TOPLEFT", iconTexture, "TOPLEFT", -1, 1)
-        self.questBorder:SetPoint("BOTTOMRIGHT", iconTexture, "BOTTOMRIGHT", 1, -1)
-    end
 
     -- Position quest icon in top-right corner
     if self.questIcon then
@@ -827,12 +818,10 @@ local function PositionIconAndBorders(self, iconSize)
     end
 end
 
--- Update quality border display
+-- Update quality border display (tints the EmptySlotBg)
 local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
-    if not self.qualityBorder then return end
-
     if not itemQuality then
-        self.qualityBorder:Hide()
+        ResetSlotBorder(self)
         HideInnerShadow(self.innerShadow)
         return
     end
@@ -869,11 +858,10 @@ local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
                 r, g, b = 1, 1, 1
             end
         end
-        self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
-        self.qualityBorder:Show()
+        TintSlotBorder(self, r, g, b)
         ShowInnerShadow(self.innerShadow, r, g, b)
     else
-        self.qualityBorder:Hide()
+        ResetSlotBorder(self)
         HideInnerShadow(self.innerShadow)
     end
 end
@@ -933,13 +921,10 @@ local function ClearItemButton(self, emptySlotBg, countText, bagID)
 
     if countText then countText:Hide() end
 
-    if self.qualityBorder then
-        self.qualityBorder:Hide()
-        HideInnerShadow(self.innerShadow)
-    end
+    ResetSlotBorder(self)
+    HideInnerShadow(self.innerShadow)
 
     -- Hide quest elements
-    if self.questBorder then self.questBorder:Hide() end
     if self.questIcon then self.questIcon:Hide() end
 end
 
@@ -1014,7 +999,6 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
 
         -- Set count
         if SetItemButtonCount then SetItemButtonCount(self, displayCount or 1) end
-        if emptySlotBg then emptySlotBg:Hide() end
 
         -- Update cooldown overlay for live items
         if not self.isReadOnly and not self.otherChar and Guda_ItemButton_UpdateCooldown then
@@ -1055,12 +1039,12 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
         end
     end
 
-    -- Resize empty slot background to fill the full button
+    -- Extend empty slot bg 9px past button edges for rounded corner coverage
     if emptySlotBg then
         emptySlotBg:ClearAllPoints()
-        emptySlotBg:SetPoint("TOPLEFT", self, "TOPLEFT", 0, 0)
-        emptySlotBg:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 0, 0)
-        emptySlotBg:SetTexCoord(0.17, 0.83, 0.17, 0.83)
+        emptySlotBg:SetPoint("TOPLEFT", self, "TOPLEFT", -9, 9)
+        emptySlotBg:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 9, -9)
+        emptySlotBg:SetTexCoord(0, 1, 0, 1)
     end
 
     -- Also resize the underlying slot textures so the border/background scale with the button.
@@ -1212,19 +1196,10 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
             normalBorder:SetTexture("")
         end
 
-        -- Show bag pattern background behind items as well
+        -- Always show slot background so rounded corners cover the icon
         if emptySlotBg then
-            local slotAlpha = 0.3
-            if addon.Modules and addon.Modules.Theme then
-                local sa = addon.Modules.Theme:GetValue("slotBgAlpha")
-                if sa then slotAlpha = sa.filled end
-            end
-            if slotAlpha > 0 then
-                emptySlotBg:Show()
-                emptySlotBg:SetAlpha(slotAlpha)
-            else
-                emptySlotBg:Hide()
-            end
+            emptySlotBg:Show()
+            emptySlotBg:SetAlpha(1)
         end
 
         -- Check if item is junk and get category mark using the CategoryManager
@@ -1253,16 +1228,16 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                 self.categoryMarkIcon = self:CreateTexture(nil, "OVERLAY")
             end
             -- Size relative to icon (roughly 40% of icon display size)
-            local markSize = math.max(10, math.floor(iconSize * 0.3))
+            local markSize = math.max(10, math.floor(iconSize * 0.3)) + 1
             local shadowSize = markSize + 2
             self.categoryMarkShadow:SetWidth(shadowSize)
             self.categoryMarkShadow:SetHeight(shadowSize)
             self.categoryMarkShadow:ClearAllPoints()
-            self.categoryMarkShadow:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", -1, -1)
+            self.categoryMarkShadow:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", 1, 1)
             self.categoryMarkIcon:SetWidth(markSize)
             self.categoryMarkIcon:SetHeight(markSize)
             self.categoryMarkIcon:ClearAllPoints()
-            self.categoryMarkIcon:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", 0, 0)
+            self.categoryMarkIcon:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", 2, 2)
             self.categoryMarkShadow:SetTexture(categoryMarkTexture)
             self.categoryMarkShadow:Show()
             self.categoryMarkIcon:SetTexture(categoryMarkTexture)
@@ -1301,8 +1276,9 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
             countText:Hide()
         end
 
-        -- Set quality border and inner shadow
-        if self.qualityBorder then
+        -- Set quality border (tint slot bg) and inner shadow
+        do
+            local borderApplied = false
             if itemQuality then
                 -- Check settings to determine if we should show borders
                 local showEquipmentBorder, showOtherBorder
@@ -1311,13 +1287,8 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                     showOtherBorder = Utils:SafeCall("DB", "GetSetting", "showQualityBorderOther")
                 end
 
-                -- Default to true if settings not found
-                if showEquipmentBorder == nil then
-                    showEquipmentBorder = true
-                end
-                if showOtherBorder == nil then
-                    showOtherBorder = true
-                end
+                if showEquipmentBorder == nil then showEquipmentBorder = true end
+                if showOtherBorder == nil then showOtherBorder = true end
 
                 -- Check if item is equipment
                 local isEquipment = false
@@ -1325,11 +1296,9 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                     isEquipment = Utils:IsEquipment(itemLink)
                 end
 
-                -- Determine if we should show the border based on item type and settings
                 local shouldShowBorder = (isEquipment and showEquipmentBorder) or (not isEquipment and showOtherBorder)
 
                 if shouldShowBorder then
-                    -- Use the item link's title color directly (matches what the player sees)
                     local r, g, b
                     if itemLink and Utils and Utils.GetLinkColor then
                         r, g, b = Utils:GetLinkColor(itemLink)
@@ -1341,38 +1310,34 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                             r, g, b = 1, 1, 1
                         end
                     end
-                    self.qualityBorder:SetBackdropBorderColor(r, g, b, 1)
-                    self.qualityBorder:Show()
+                    TintSlotBorder(self, r, g, b)
                     ShowInnerShadow(self.innerShadow, r, g, b)
-                else
-                    self.qualityBorder:Hide()
-                    HideInnerShadow(self.innerShadow)
+                    borderApplied = true
                 end
-            else
-                self.qualityBorder:Hide()
+            end
+
+            -- Quest items override with golden border
+            if not self.otherChar and not self.isReadOnly then
+                local isQuest, isQuestStarter = IsQuestItem(bagID, slotID, self.isBank, itemData)
+                Guda_ItemButton_UpdateQuestIcon(self, isQuest, isQuestStarter)
+                if isQuest then
+                    TintSlotBorder(self, 1.0, 0.82, 0)
+                    ShowInnerShadow(self.innerShadow, 1.0, 0.82, 0)
+                    borderApplied = true
+                end
+                if self.questIcon then
+                    if isQuest then
+                        self.questIcon:Show()
+                    else
+                        self.questIcon:Hide()
+                    end
+                end
+            end
+
+            if not borderApplied then
+                ResetSlotBorder(self)
                 HideInnerShadow(self.innerShadow)
             end
-        end
-
-		if not self.otherChar and not self.isReadOnly then
-			local isQuest, isQuestStarter = IsQuestItem(bagID, slotID, self.isBank, itemData)
-			-- Update quest icon with the appropriate texture
-			Guda_ItemButton_UpdateQuestIcon(self, isQuest, isQuestStarter)
-			if self.questBorder then
-				if isQuest then
-					self.questBorder:Show()
-				else
-					self.questBorder:Hide()
-				end
-			end
-
-			if self.questIcon then
-				if isQuest then
-					self.questIcon:Show()
-				else
-					self.questIcon:Hide()
-				end
-			end
 		end
 
         -- Handle tracking toggle on click
@@ -1418,16 +1383,11 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
 
         countText:Hide()
 
-        -- Show border for empty keyring slots
-        if self.qualityBorder then
-            self.qualityBorder:Hide()
-            HideInnerShadow(self.innerShadow)
-        end
+        -- Reset slot border and hide inner shadow for empty slots
+        ResetSlotBorder(self)
+        HideInnerShadow(self.innerShadow)
 
-        -- Hide quest border and icon for empty slots
-        if self.questBorder then
-            self.questBorder:Hide()
-        end
+        -- Hide quest icon for empty slots
         if self.questIcon then
             self.questIcon:Hide()
         end
@@ -1451,22 +1411,8 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
             iconTexture:SetWidth(iconDisplaySize)
             iconTexture:SetHeight(iconDisplaySize)
             -- Crop icon edges slightly
-            iconTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+            iconTexture:SetTexCoord(0, 1, 0, 1)
             iconTexture:Show()
-
-            -- Position quality border around the icon
-            if self.qualityBorder then
-                self.qualityBorder:ClearAllPoints()
-                self.qualityBorder:SetPoint("TOPLEFT", iconTexture, "TOPLEFT", -1, 1)
-                self.qualityBorder:SetPoint("BOTTOMRIGHT", iconTexture, "BOTTOMRIGHT", 1, -1)
-            end
-
-            -- Position quest border around the icon
-            if self.questBorder then
-                self.questBorder:ClearAllPoints()
-                self.questBorder:SetPoint("TOPLEFT", iconTexture, "TOPLEFT", -1, 1)
-                self.questBorder:SetPoint("BOTTOMRIGHT", iconTexture, "BOTTOMRIGHT", 1, -1)
-            end
 
             -- Position quest icon in top-right corner
             if self.questIcon then
