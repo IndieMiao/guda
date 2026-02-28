@@ -130,6 +130,12 @@ function DB:Initialize()
 	if Guda_CharDB.settings.markEquipmentSets == nil then
 		Guda_CharDB.settings.markEquipmentSets = true
 	end
+	if Guda_CharDB.settings.autoVendorJunk == nil then
+		Guda_CharDB.settings.autoVendorJunk = true
+	end
+	if Guda_CharDB.settings.whiteItemsJunk == nil then
+		Guda_CharDB.settings.whiteItemsJunk = false
+	end
 
 	-- Initialize CategoryManager for custom categories
 	if addon.Modules.CategoryManager then

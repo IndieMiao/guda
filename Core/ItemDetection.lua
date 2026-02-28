@@ -241,8 +241,12 @@ local function DetectJunk(lines, itemData)
         end
     end
 
-    -- White equippable items might be junk
-    if quality == 1 and (itemClass == "Weapon" or itemClass == "Armor") then
+    -- White equippable items might be junk (only if whiteItemsJunk setting is enabled)
+    local whiteItemsJunk = false
+    if addon and addon.Modules and addon.Modules.DB then
+        whiteItemsJunk = addon.Modules.DB:GetSetting("whiteItemsJunk")
+    end
+    if quality == 1 and whiteItemsJunk and (itemClass == "Weapon" or itemClass == "Armor") then
         -- Exclusions: trinkets, rings, necklaces, tabards, shirts
         local subLower = string.lower(itemSubclass)
         if string.find(subLower, "trinket") or

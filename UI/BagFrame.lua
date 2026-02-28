@@ -3269,6 +3269,50 @@ function BagFrame:Initialize()
 		if frameRef and not frameRef:IsShown() then
 			frameRef:Show()
 		end
+
+		-- Auto-sell junk items (spread across frames to avoid item locking)
+		local autoVendor = addon.Modules.DB:GetSetting("autoVendorJunk")
+		if autoVendor == nil then autoVendor = true end
+		if autoVendor then
+			local junkItems = {}
+			for bag = 0, 4 do
+				local numSlots = GetContainerNumSlots(bag)
+				for slot = 1, numSlots do
+					local link = GetContainerItemLink(bag, slot)
+					if link and string.find(link, "|cff9d9d9d") then
+						table.insert(junkItems, { bag = bag, slot = slot })
+					end
+				end
+			end
+			if table.getn(junkItems) > 0 then
+				local idx = 0
+				local soldCount = 0
+				local sellFrame = CreateFrame("Frame")
+				sellFrame:SetScript("OnUpdate", function()
+					if not isMerchantOpen then
+						this:SetScript("OnUpdate", nil)
+						if soldCount > 0 then
+							addon:Print("Sold " .. soldCount .. " junk item(s).")
+						end
+						return
+					end
+					idx = idx + 1
+					local item = junkItems[idx]
+					if item then
+						local link = GetContainerItemLink(item.bag, item.slot)
+						if link and string.find(link, "|cff9d9d9d") then
+							UseContainerItem(item.bag, item.slot)
+							soldCount = soldCount + 1
+						end
+					else
+						this:SetScript("OnUpdate", nil)
+						if soldCount > 0 then
+							addon:Print("Sold " .. soldCount .. " junk item(s).")
+						end
+					end
+				end)
+			end
+		end
 	end, "BagFrame")
 
 	addon.Modules.Events:Register("MERCHANT_CLOSED", function()

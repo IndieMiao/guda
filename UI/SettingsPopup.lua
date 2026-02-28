@@ -62,6 +62,7 @@ function Guda_SettingsPopup_OnLoad(self)
     if generalTab then
         CreateSectionHeader(generalTab, "Appearance", -12)
         CreateSectionHeader(generalTab, "Options", -120)
+        CreateSectionHeader(generalTab, "Automation", -230)
     end
 
     local layoutTab = getglobal("Guda_SettingsPopup_LayoutTab")
@@ -280,6 +281,22 @@ function Guda_SettingsPopup_OnShow(self)
     if markEquipmentSets == nil then markEquipmentSets = true end
     if markEquipmentSetsCheckbox then
         markEquipmentSetsCheckbox:SetChecked(markEquipmentSets and 1 or 0)
+    end
+
+    -- Automation checkboxes
+    local autoVendorJunkCheckbox = getglobal("Guda_SettingsPopup_AutoVendorJunkCheckbox")
+    local autoVendorJunk = Guda.Modules.DB:GetSetting("autoVendorJunk")
+    if autoVendorJunk == nil then autoVendorJunk = true end
+    if autoVendorJunkCheckbox then
+        autoVendorJunkCheckbox:SetChecked(autoVendorJunk and 1 or 0)
+    end
+
+    -- White Items as Junk checkbox
+    local whiteItemsJunkCheckbox = getglobal("Guda_SettingsPopup_WhiteItemsJunkCheckbox")
+    local whiteItemsJunk = Guda.Modules.DB:GetSetting("whiteItemsJunk")
+    if whiteItemsJunk == nil then whiteItemsJunk = false end
+    if whiteItemsJunkCheckbox then
+        whiteItemsJunkCheckbox:SetChecked(whiteItemsJunk and 1 or 0)
     end
 
     if bagViewButton then
@@ -1282,6 +1299,86 @@ function Guda_SettingsPopup_MarkEquipmentSetsCheckbox_OnClick(self)
         Guda.Modules.DB:SetSetting("markEquipmentSets", isChecked)
     end
 
+    local bagFrame = getglobal("Guda_BagFrame")
+    if bagFrame and bagFrame:IsShown() then
+        Guda.Modules.BagFrame:Update()
+    end
+
+    local bankFrame = getglobal("Guda_BankFrame")
+    if bankFrame and bankFrame:IsShown() then
+        Guda.Modules.BankFrame:Update()
+    end
+end
+
+-- Auto Vendor Junk Checkbox OnLoad
+function Guda_SettingsPopup_AutoVendorJunkCheckbox_OnLoad(self)
+    local text = getglobal(self:GetName().."Text")
+    if text then
+        text:SetText("Auto Sell Junk")
+
+        local font, _, flags = text:GetFont()
+        if font then
+            text:SetFont(font, 13, flags)
+        end
+    end
+
+    self.tooltipText = "Automatically sell gray (junk) items when you visit a vendor."
+
+    local enabled = true
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        enabled = Guda.Modules.DB:GetSetting("autoVendorJunk")
+        if enabled == nil then enabled = true end
+    end
+
+    self:SetChecked(enabled and 1 or 0)
+end
+
+-- Auto Vendor Junk Checkbox OnClick
+function Guda_SettingsPopup_AutoVendorJunkCheckbox_OnClick(self)
+    local isChecked = self:GetChecked() == 1
+
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        Guda.Modules.DB:SetSetting("autoVendorJunk", isChecked)
+    end
+end
+
+-- White Items as Junk Checkbox OnLoad
+function Guda_SettingsPopup_WhiteItemsJunkCheckbox_OnLoad(self)
+    local text = getglobal(self:GetName().."Text")
+    if text then
+        text:SetText("White Items as Junk")
+
+        local font, _, flags = text:GetFont()
+        if font then
+            text:SetFont(font, 13, flags)
+        end
+    end
+
+    self.tooltipText = "Treat white (common) equippable items as junk. They will be dimmed and auto-sold if auto-sell is enabled."
+
+    local enabled = false
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        enabled = Guda.Modules.DB:GetSetting("whiteItemsJunk")
+        if enabled == nil then enabled = false end
+    end
+
+    self:SetChecked(enabled and 1 or 0)
+end
+
+-- White Items as Junk Checkbox OnClick
+function Guda_SettingsPopup_WhiteItemsJunkCheckbox_OnClick(self)
+    local isChecked = self:GetChecked() == 1
+
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        Guda.Modules.DB:SetSetting("whiteItemsJunk", isChecked)
+    end
+
+    -- Clear item detection cache so junk status is re-evaluated
+    if Guda.Modules.ItemDetection and Guda.Modules.ItemDetection.ClearCache then
+        Guda.Modules.ItemDetection:ClearCache()
+    end
+
+    -- Update bag and bank frames
     local bagFrame = getglobal("Guda_BagFrame")
     if bagFrame and bagFrame:IsShown() then
         Guda.Modules.BagFrame:Update()

@@ -1347,6 +1347,15 @@ function CategoryManager:SyncEquipmentSetCategories()
                 end
             end
             if not insertPos then
+                -- Insert before Junk category if it exists, otherwise at end of Main group
+                for i, orderId in ipairs(cats.order) do
+                    if orderId == "Junk" then
+                        insertPos = i
+                        break
+                    end
+                end
+            end
+            if not insertPos then
                 for i = table.getn(cats.order), 1, -1 do
                     local existDef = cats.definitions[cats.order[i]]
                     if existDef and (existDef.group or GROUP_MAIN) == GROUP_MAIN then

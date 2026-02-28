@@ -317,6 +317,20 @@
                             <OnClick>Guda_SettingsPopup_ReverseStackSortCheckbox_OnClick(this)</OnClick>
                         </Scripts>
                     </CheckButton>
+
+                    <!-- Automation section -->
+                    <!-- Auto Sell Junk Checkbox -->
+                    <CheckButton name="Guda_SettingsPopup_AutoVendorJunkCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_ShowTooltipCountsCheckbox">
+                                <Offset><AbsDimension x="0" y="-35"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>Guda_SettingsPopup_AutoVendorJunkCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>Guda_SettingsPopup_AutoVendorJunkCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
                 </Frames>
             </Frame>
 
@@ -555,11 +569,24 @@
                         </Scripts>
                     </CheckButton>
 
+                    <!-- White Items as Junk Checkbox -->
+                    <CheckButton name="Guda_SettingsPopup_WhiteItemsJunkCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_MarkUnusableCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>Guda_SettingsPopup_WhiteItemsJunkCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>Guda_SettingsPopup_WhiteItemsJunkCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
+
                     <!-- Junk Item Opacity Slider -->
                     <Slider name="Guda_SettingsPopup_JunkOpacitySlider" inherits="OptionsSliderTemplate">
                         <Size><AbsDimension x="450" y="17"/></Size>
                         <Anchors>
-                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_MarkUnusableCheckbox">
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_WhiteItemsJunkCheckbox">
                                 <Offset><AbsDimension x="0" y="-25"/></Offset>
                             </Anchor>
                         </Anchors>
