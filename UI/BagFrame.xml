@@ -742,16 +742,31 @@
 
 
             <!-- Container for item buttons -->
-            <!-- Set enableMouse to false so it does not intercept drag/drop meant for child item buttons -->
-            <Frame name="$parent_ItemContainer" enableMouse="false">
+            <Frame name="$parent_ItemContainer" enableMouse="true">
                 <Size>
                     <AbsDimension x="400" y="480"/>
                 </Size>
                 <Anchors>
                     <Anchor point="TOP" relativePoint="BOTTOM" relativeTo="$parent_SearchBar" x="0" y="-5"/>
                 </Anchors>
-                <!-- Note: with enableMouse=false, OnMouseDown/OnReceiveDrag here would not fire; 
-                     child item buttons will handle mouse events directly. -->
+                <Scripts>
+                    <OnReceiveDrag>
+                        -- Drop item into first available bag slot
+                        if CursorHasItem and CursorHasItem() then
+                            if PutItemInBackpack then
+                                PutItemInBackpack()
+                            end
+                            for bag = 1, 4 do
+                                if CursorHasItem() then
+                                    local invSlot = ContainerIDToInventoryID(bag)
+                                    if PutItemInBag then
+                                        PutItemInBag(invSlot)
+                                    end
+                                end
+                            end
+                        end
+                    </OnReceiveDrag>
+                </Scripts>
             </Frame>
         </Frames>
 
@@ -779,6 +794,22 @@
             <OnMouseUp>
                 this:StopMovingOrSizing()
             </OnMouseUp>
+            <OnReceiveDrag>
+                -- Drop item into first available bag slot
+                if CursorHasItem and CursorHasItem() then
+                    if PutItemInBackpack then
+                        PutItemInBackpack()
+                    end
+                    for bag = 1, 4 do
+                        if CursorHasItem() then
+                            local invSlot = ContainerIDToInventoryID(bag)
+                            if PutItemInBag then
+                                PutItemInBag(invSlot)
+                            end
+                        end
+                    end
+                end
+            </OnReceiveDrag>
         </Scripts>
     </Frame>
 
