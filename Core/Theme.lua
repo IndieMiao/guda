@@ -20,33 +20,10 @@ end
 -- Background is rendered via a standalone Texture child (not bgFile).
 local themes = {
     guda = {
-        -- ChatFrameBackground is a solid white 1x1 pixel.
-        -- Vertex-colored (0,0,0) it becomes a solid dark background.
         bgTexture = "Interface\\ChatFrame\\ChatFrameBackground",
-        bgColor = { r = 0, g = 0, b = 0 },
+        bgColor = { r = 0.08, g = 0.08, b = 0.08 },
         bgTile = true,
         bgTileSize = 16,
-        border = {
-            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            edgeSize = 32,
-            insets = { left = 11, right = 12, top = 12, bottom = 11 }
-        },
-        borderMinimal = {
-            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-            edgeSize = 2,
-            insets = { left = 0, right = 0, top = 0, bottom = 0 }
-        },
-        titleColor = { r = 1, g = 0.82, b = 0 },
-        slotBgAlpha = { empty = 0.5, filled = 0.3 },
-        footerButtonBg = { 0.12, 0.12, 0.12, 1 },
-        footerButtonBorder = { 0.30, 0.30, 0.30, 1 },
-        showHeaderButtonBg = false,
-    },
-    blizzard = {
-        bgTexture = "Interface\\AddOns\\Guda\\Assets\\UI-Background-Marble",
-        bgColor = { r = 0.4, g = 0.4, b = 0.4 },
-        bgTile = true,
-        bgTileSize = 256,
         border = {
             edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
             edgeSize = 32,
@@ -63,6 +40,27 @@ local themes = {
             edgeV  = "Interface\\AddOns\\Guda\\Assets\\NineSlice-EdgeV",
             cornerSize = 32,
             edgeThickness = 16,
+        },
+        titleColor = { r = 1, g = 0.82, b = 0 },
+        slotBgAlpha = { empty = 0.5, filled = 0.3 },
+        footerButtonBg = { 0.12, 0.12, 0.12, 1 },
+        footerButtonBorder = { 0.30, 0.30, 0.30, 1 },
+        showHeaderButtonBg = false,
+    },
+    blizzard = {
+        bgTexture = "Interface\\ChatFrame\\ChatFrameBackground",
+        bgColor = { r = 0.08, g = 0.08, b = 0.08 },
+        bgTile = true,
+        bgTileSize = 16,
+        border = {
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        },
+        borderMinimal = {
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            edgeSize = 2,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 }
         },
         titleColor = { r = 1, g = 0.82, b = 0 },
         slotBgAlpha = { empty = 1, filled = 1 },
@@ -122,6 +120,50 @@ local function HideNineSlice(frame)
     if not frame._gudaNineSlice then return end
     for i = 1, 8 do
         frame._gudaNineSlice[i]:Hide()
+    end
+end
+
+-- Apply or hide background quadrant textures (4 pieces forming a 320x384 background)
+-- Layout: TopLeft(256x256) + TopRight(64x256) on top,
+--         BotLeft(256x128) + BotRight(64x128) directly below them
+local function ApplyBgQuadrants(frame, quadrants)
+    if not frame._gudaBgQuad then
+        frame._gudaBgQuad = {}
+        for i = 1, 4 do
+            frame._gudaBgQuad[i] = frame:CreateTexture(nil, "BACKGROUND")
+        end
+    end
+    local q = frame._gudaBgQuad
+    -- TopLeft: 256x256, anchored at top-left
+    q[1]:ClearAllPoints()
+    q[1]:SetTexture(quadrants.topLeft)
+    q[1]:SetWidth(256); q[1]:SetHeight(256)
+    q[1]:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    q[1]:Show()
+    -- TopRight: 64x256, anchored to the right of TopLeft
+    q[2]:ClearAllPoints()
+    q[2]:SetTexture(quadrants.topRight)
+    q[2]:SetWidth(64); q[2]:SetHeight(256)
+    q[2]:SetPoint("TOPLEFT", q[1], "TOPRIGHT", 0, 0)
+    q[2]:Show()
+    -- BotLeft: 256x128, anchored below TopLeft
+    q[3]:ClearAllPoints()
+    q[3]:SetTexture(quadrants.bottomLeft)
+    q[3]:SetWidth(256); q[3]:SetHeight(128)
+    q[3]:SetPoint("TOPLEFT", q[1], "BOTTOMLEFT", 0, 0)
+    q[3]:Show()
+    -- BotRight: 64x128, anchored below TopRight / right of BotLeft
+    q[4]:ClearAllPoints()
+    q[4]:SetTexture(quadrants.bottomRight)
+    q[4]:SetWidth(64); q[4]:SetHeight(128)
+    q[4]:SetPoint("TOPLEFT", q[1], "BOTTOMRIGHT", 0, 0)
+    q[4]:Show()
+end
+
+local function HideBgQuadrants(frame)
+    if not frame._gudaBgQuad then return end
+    for i = 1, 4 do
+        frame._gudaBgQuad[i]:Hide()
     end
 end
 
@@ -279,6 +321,9 @@ function Theme:ApplyToFrame(frame)
     if isMinimal then
         frame:SetBackdropBorderColor(1, 1, 1, 1)
     end
+
+    -- Background quadrant textures (disabled for testing)
+    HideBgQuadrants(frame)
 
     -- Background color / alpha
     local bg = t.bgColor
