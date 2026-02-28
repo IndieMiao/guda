@@ -452,6 +452,8 @@ local function CreateBagFlyout(parent)
 			Guda_BagSlot_OnEnter(this, this.bagID)
 		end)
 		btn:SetScript("OnLeave", function()
+			GameTooltip:Hide()
+			Guda_BagFrame_ClearHighlightedSlots()
 			Guda_BagSlot_OnLeave(this, this.bagID)
 		end)
 
