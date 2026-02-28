@@ -163,7 +163,7 @@ function Guda_SettingsPopup_OnShow(self)
     end
     local hideBagline = Guda.Modules.DB:GetSetting("hideBagline")
     if hideBagline == nil then
-        hideBagline = false
+        hideBagline = true  -- default: hidden (Show All Bags unchecked)
     end
     local bgTransparency = Guda.Modules.DB:GetSetting("bgTransparency") or 0.15
     local bagViewType = Guda.Modules.DB:GetSetting("bagViewType") or "single"
@@ -263,7 +263,8 @@ function Guda_SettingsPopup_OnShow(self)
     end
 
     if hoverBaglineCheckbox then
-        hoverBaglineCheckbox:SetChecked(hideBagline and 1 or 0)
+        -- Inverted: checked = show bags = NOT hidden
+        hoverBaglineCheckbox:SetChecked(hideBagline and 0 or 1)
     end
 
     if showTooltipCountsCheckbox then
@@ -1003,7 +1004,7 @@ end
 function Guda_SettingsPopup_HoverBaglineCheckbox_OnLoad(self)
     local text = getglobal(self:GetName().."Text")
     if text then
-        text:SetText("Hide Bagline")
+        text:SetText("Show All Bags")
 
         -- Increase font size
         local font, _, flags = text:GetFont()
@@ -1015,24 +1016,27 @@ function Guda_SettingsPopup_HoverBaglineCheckbox_OnLoad(self)
     -- Tooltip
     self.tooltipText = L_HIDE_BAGLINE_TT
 
-    local hideBagline = false
+    local hideBagline = true
     if Guda and Guda.Modules and Guda.Modules.DB then
-        hideBagline = Guda.Modules.DB:GetSetting("hideBagline")
-        if hideBagline == nil then
-            hideBagline = false
+        local val = Guda.Modules.DB:GetSetting("hideBagline")
+        if val == nil then
+            hideBagline = true  -- default: hidden (Show All Bags unchecked)
+        else
+            hideBagline = val
         end
     end
 
-    self:SetChecked(hideBagline and 1 or 0)
+    -- Inverted: checked = NOT hidden
+    self:SetChecked(hideBagline and 0 or 1)
 end
 
--- Hide Bagline Checkbox OnClick
+-- Show All Bags Checkbox OnClick (inverted hideBagline)
 function Guda_SettingsPopup_HoverBaglineCheckbox_OnClick(self)
     local isChecked = self:GetChecked() == 1
 
-    -- Save setting
+    -- Save setting (inverted: checked means show, so hideBagline = false)
     if Guda and Guda.Modules and Guda.Modules.DB then
-        Guda.Modules.DB:SetSetting("hideBagline", isChecked)
+        Guda.Modules.DB:SetSetting("hideBagline", not isChecked)
     end
 
     -- Update bag0 icon

@@ -557,6 +557,15 @@ function BagFrame:UpdateBaglineLayout()
 		lastButton = soulbag
 	end
 
+	-- Update backpack texture based on bagline setting
+	if bag0 then
+		if hideBagline then
+			SetItemButtonTexture(bag0, "Interface\\AddOns\\Guda\\Assets\\bags")
+		else
+			SetItemButtonTexture(bag0, "Interface\\Buttons\\Button-Backpack-Up")
+		end
+	end
+
 	if hideBagline then
 		-- Hide bags 1-4, show only bag0 + keyring + soulbag
 		if bag1 then bag1:Hide() end
