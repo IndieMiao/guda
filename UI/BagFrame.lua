@@ -23,6 +23,36 @@ local searchText = ""
 local itemButtons = {}
 local slotToButton = {} -- Fast O(1) lookup: slotToButton[bagID][slotID] = button
 local showKeyring = false -- Toggle for keyring display
+
+-- Track empty slots that should show as placeholders in Category View
+-- Format: bagRecentlyEmptiedSlots[bagID][slotID] = { category = "CategoryName", timestamp = time, ... }
+local bagRecentlyEmptiedSlots = {}
+
+function BagFrame:ClearRecentlyEmptiedSlots()
+    for k in pairs(bagRecentlyEmptiedSlots) do
+        bagRecentlyEmptiedSlots[k] = nil
+    end
+end
+
+function BagFrame:MarkSlotAsEmptied(bagID, slotID, category, itemData)
+    if not bagRecentlyEmptiedSlots[bagID] then
+        bagRecentlyEmptiedSlots[bagID] = {}
+    end
+    bagRecentlyEmptiedSlots[bagID][slotID] = {
+        category = category or "Miscellaneous",
+        timestamp = GetTime(),
+        quality = itemData and itemData.quality or 0,
+        name = itemData and itemData.name or "",
+        iLevel = itemData and itemData.iLevel or 0,
+    }
+    addon:DebugCategory("BagFrame: Marked slot %d:%d as emptied (category: %s)", bagID, slotID, category or "Miscellaneous")
+end
+
+function BagFrame:UnmarkSlotAsEmptied(bagID, slotID)
+    if bagRecentlyEmptiedSlots[bagID] then
+        bagRecentlyEmptiedSlots[bagID][slotID] = nil
+    end
+end
 local showSoulBag = false -- Toggle for soul bag display
 local hiddenBags = {} -- Track which bags are hidden (bagID -> true/false)
 local bagParents = {} -- Per-bag parent frames to carry bagID for Blizzard item button templates
@@ -218,6 +248,9 @@ function Guda_BagFrame_OnHide(self)
 
     -- Cancel any pending deferred usability check (debounce safety)
     CancelDeferredUsabilityCheck()
+
+    -- Clear recently emptied slots tracking (reset placeholders)
+    BagFrame:ClearRecentlyEmptiedSlots()
 
 	-- Clean up all buttons when frame is hidden (safe since we're not displaying)
 	-- Use itemButtons hash instead of GetChildren() to avoid table allocation
@@ -952,6 +985,38 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
         table.insert(categoryList, "Soul Bag")
     end
 
+    -- Add recently emptied slots as empty placeholders in their respective categories
+    -- This preserves the visual position of items that were just moved out
+    if not isOtherChar then
+        for bagID, slots in pairs(bagRecentlyEmptiedSlots) do
+            if not hiddenBags[bagID] then
+                for slotID, info in pairs(slots) do
+                    -- Only add if slot is actually empty (not refilled)
+                    local currentLink = GetContainerItemLink(bagID, slotID)
+                    if not currentLink then
+                        local catName = info.category
+                        if catName and categories[catName] then
+                            table.insert(categories[catName], {
+                                bagID = bagID,
+                                slotID = slotID,
+                                itemData = {
+                                    quality = info.quality or 0,
+                                    name = info.name or "",
+                                    iLevel = info.iLevel or 0,
+                                },
+                                isEmpty = true,
+                            })
+                            addon:DebugCategory("BagFrame: Added empty placeholder for %d:%d to category %s", bagID, slotID, catName)
+                        end
+                    else
+                        -- Slot has item now, remove from tracking
+                        slots[slotID] = nil
+                    end
+                end
+            end
+        end
+    end
+
     -- Layout
     local startX, startY = 10, -10
     local currentX, currentY = 0, 0
@@ -1093,7 +1158,8 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
             for _, item in ipairs(items) do
                 local bagID = item.bagID
                 local slot = item.slotID
-                local itemData = item.itemData
+                -- For empty placeholders, pass nil itemData so button shows as empty slot
+                local itemData = item.isEmpty and nil or item.itemData
 
                 local bagParent = self:GetBagParent(bagID)
                 local button = Guda_GetItemButton(bagParent)
@@ -1108,9 +1174,14 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
                 local matchesFilter = self:PassesSearchFilter(itemData)
                 Guda_ItemButton_SetItem(button, bagID, slot, itemData, false, isOtherChar and charName or nil, matchesFilter, isOtherChar)
                 button.inUse = true
+                button.isEmptyPlaceholder = item.isEmpty or false
                 table.insert(itemButtons, button)
                 if not slotToButton[bagID] then slotToButton[bagID] = {} end
                 slotToButton[bagID][slot] = button
+                -- Remove from recently emptied if slot now has an item
+                if itemData and not item.isEmpty then
+                    self:UnmarkSlotAsEmptied(bagID, slot)
+                end
 
                 col = col + 1
                 if col >= blockCols then
@@ -2243,7 +2314,8 @@ function Guda_BagFrame_MergeStacks()
 	end
 
 	if table.getn(moveQueue) == 0 then
-		-- No stacks to merge, just do a clean refresh
+		-- No stacks to merge — clear placeholders and refresh view
+		BagFrame:ClearRecentlyEmptiedSlots()
 		-- Clear item detection cache to force fresh tooltip scans
 		if addon.Modules.ItemDetection and addon.Modules.ItemDetection.ClearCache then
 			addon.Modules.ItemDetection:ClearCache()
@@ -2266,7 +2338,8 @@ function Guda_BagFrame_MergeStacks()
 		if queueIndex > table.getn(moveQueue) then
 			addon.Modules.SortEngine.sortingInProgress = false
 			addon.Modules.SortEngine:UpdateSortButtonState(false)
-			-- Clear item detection cache to force fresh tooltip scans
+			-- Clear placeholders and item detection cache
+			BagFrame:ClearRecentlyEmptiedSlots()
 			if addon.Modules.ItemDetection and addon.Modules.ItemDetection.ClearCache then
 				addon.Modules.ItemDetection:ClearCache()
 			end
@@ -3189,6 +3262,25 @@ function BagFrame:Initialize()
          end
          -- Fall through to full redraw if incremental update failed
          addon:DebugCategory("BAG_UPDATE: Incremental update failed, doing full redraw")
+     end
+
+     -- In category view, detect slots that just became empty to show placeholders
+     if viewType == "category" and not isSorting then
+         local numSlots = GetContainerNumSlots(bagID)
+         if numSlots and numSlots > 0 then
+             for slotID = 1, numSlots do
+                 local currentLink = GetContainerItemLink(bagID, slotID)
+                 local button = slotToButton[bagID] and slotToButton[bagID][slotID]
+                 if button and button.hasItem and not currentLink and not button.isEmptyPlaceholder then
+                     -- This slot had an item but is now empty — mark as recently emptied
+                     local oldCategory = nil
+                     if button.itemData and addon.Modules.CategoryManager then
+                         oldCategory = addon.Modules.CategoryManager:CategorizeItem(button.itemData, bagID, slotID)
+                     end
+                     BagFrame:MarkSlotAsEmptied(bagID, slotID, oldCategory, button.itemData)
+                 end
+             end
+         end
      end
 
      -- Sorting in progress or incremental update failed - use throttled full redraw
