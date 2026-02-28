@@ -283,6 +283,14 @@ function Guda_SettingsPopup_OnShow(self)
         markEquipmentSetsCheckbox:SetChecked(markEquipmentSets and 1 or 0)
     end
 
+    -- Show Category Count checkbox
+    local showCategoryCountCheckbox = getglobal("Guda_SettingsPopup_ShowCategoryCountCheckbox")
+    local showCategoryCount = Guda.Modules.DB:GetSetting("showCategoryCount")
+    if showCategoryCount == nil then showCategoryCount = true end
+    if showCategoryCountCheckbox then
+        showCategoryCountCheckbox:SetChecked(showCategoryCount and 1 or 0)
+    end
+
     -- Automation checkboxes
     local autoVendorJunkCheckbox = getglobal("Guda_SettingsPopup_AutoVendorJunkCheckbox")
     local autoVendorJunk = Guda.Modules.DB:GetSetting("autoVendorJunk")
@@ -1297,6 +1305,48 @@ function Guda_SettingsPopup_MarkEquipmentSetsCheckbox_OnClick(self)
 
     if Guda and Guda.Modules and Guda.Modules.DB then
         Guda.Modules.DB:SetSetting("markEquipmentSets", isChecked)
+    end
+
+    local bagFrame = getglobal("Guda_BagFrame")
+    if bagFrame and bagFrame:IsShown() then
+        Guda.Modules.BagFrame:Update()
+    end
+
+    local bankFrame = getglobal("Guda_BankFrame")
+    if bankFrame and bankFrame:IsShown() then
+        Guda.Modules.BankFrame:Update()
+    end
+end
+
+-- Show Category Count Checkbox OnLoad
+function Guda_SettingsPopup_ShowCategoryCountCheckbox_OnLoad(self)
+    local text = getglobal(self:GetName().."Text")
+    if text then
+        text:SetText("Show Category Count")
+
+        local font, _, flags = text:GetFont()
+        if font then
+            text:SetFont(font, 13, flags)
+        end
+    end
+
+    self.tooltipText = "Show the item count next to each category header in category view."
+
+    local enabled = true
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        enabled = Guda.Modules.DB:GetSetting("showCategoryCount")
+        if enabled == nil then enabled = true end
+    end
+
+    self:SetChecked(enabled and 1 or 0)
+end
+
+-- Show Category Count Checkbox OnClick
+function Guda_SettingsPopup_ShowCategoryCountCheckbox_OnClick(self)
+    local isChecked = self:GetChecked() == 1
+
+    if Guda and Guda.Modules and Guda.Modules.DB then
+        Guda.Modules.DB:SetSetting("showCategoryCount", isChecked)
     end
 
     local bagFrame = getglobal("Guda_BagFrame")

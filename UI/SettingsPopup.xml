@@ -456,6 +456,19 @@
                             <OnClick>Guda_SettingsPopup_ShowEquipSetCategoriesCheckbox_OnClick(this)</OnClick>
                         </Scripts>
                     </CheckButton>
+
+                    <!-- Show Category Count Checkbox -->
+                    <CheckButton name="Guda_SettingsPopup_ShowCategoryCountCheckbox" inherits="OptionsCheckButtonTemplate">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" relativeTo="Guda_SettingsPopup_HoverBaglineCheckbox">
+                                <Offset><AbsDimension x="0" y="-8"/></Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnLoad>Guda_SettingsPopup_ShowCategoryCountCheckbox_OnLoad(this)</OnLoad>
+                            <OnClick>Guda_SettingsPopup_ShowCategoryCountCheckbox_OnClick(this)</OnClick>
+                        </Scripts>
+                    </CheckButton>
                 </Frames>
             </Frame>
 

@@ -1075,9 +1075,11 @@ function BagFrame:DisplayItemsByCategory(bagData, isOtherChar, charName)
             displayName = catDef.name
         end
 
-        -- Set item count
+        -- Set item count (gated by showCategoryCount setting)
         if header.countText then
-            if numItems > 0 then
+            local showCount = addon.Modules.DB:GetSetting("showCategoryCount")
+            if showCount == nil then showCount = true end
+            if showCount and numItems > 0 then
                 header.countText:SetText("(" .. numItems .. ")")
                 header.countText:Show()
             else

@@ -130,6 +130,9 @@ function DB:Initialize()
 	if Guda_CharDB.settings.markEquipmentSets == nil then
 		Guda_CharDB.settings.markEquipmentSets = true
 	end
+	if Guda_CharDB.settings.showCategoryCount == nil then
+		Guda_CharDB.settings.showCategoryCount = true
+	end
 	if Guda_CharDB.settings.autoVendorJunk == nil then
 		Guda_CharDB.settings.autoVendorJunk = true
 	end

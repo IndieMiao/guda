@@ -880,10 +880,16 @@ function BankFrame:DisplayItemsByCategory(bankData, isOtherChar, charName)
                 displayName = catDef.name
             end
 
-            -- Set item count
+            -- Set item count (gated by showCategoryCount setting)
             if header.countText then
-                header.countText:SetText("(" .. numItems .. ")")
-                header.countText:Show()
+                local showCount = addon.Modules.DB:GetSetting("showCategoryCount")
+                if showCount == nil then showCount = true end
+                if showCount and numItems > 0 then
+                    header.countText:SetText("(" .. numItems .. ")")
+                    header.countText:Show()
+                else
+                    header.countText:Hide()
+                end
             end
 
             header.fullName = displayName
@@ -994,7 +1000,16 @@ function BankFrame:DisplayItemsByCategory(bankData, isOtherChar, charName)
                 header:SetPoint("TOPLEFT", itemContainer, "TOPLEFT", x + currentBottomX, y)
                 header:SetWidth(blockWidth)
                 header.text:SetText(sec.name)
-                if header.countText then header.countText:SetText("(" .. numItems .. ")"); header.countText:Show() end
+                if header.countText then
+                    local showCount = addon.Modules.DB:GetSetting("showCategoryCount")
+                    if showCount == nil then showCount = true end
+                    if showCount and numItems > 0 then
+                        header.countText:SetText("(" .. numItems .. ")")
+                        header.countText:Show()
+                    else
+                        header.countText:Hide()
+                    end
+                end
                 header:Show()
 
                 local itemY = y - 20
