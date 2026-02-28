@@ -49,9 +49,10 @@ local themes = {
     },
     blizzard = {
         bgTexture = "Interface\\ChatFrame\\ChatFrameBackground",
-        bgColor = { r = 0.08, g = 0.08, b = 0.08 },
+        bgColor = { r = 0, g = 0, b = 0 },
         bgTile = true,
         bgTileSize = 16,
+        bgOverlay = "Interface\\AddOns\\Guda\\Assets\\UI-Background-Rock",
         border = {
             edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
             edgeSize = 32,
@@ -61,6 +62,13 @@ local themes = {
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
             edgeSize = 2,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        },
+        nineSlice = {
+            corner = "Interface\\AddOns\\Guda\\Assets\\NineSlice-Corner",
+            edgeH  = "Interface\\AddOns\\Guda\\Assets\\NineSlice-EdgeH",
+            edgeV  = "Interface\\AddOns\\Guda\\Assets\\NineSlice-EdgeV",
+            cornerSize = 32,
+            edgeThickness = 16,
         },
         titleColor = { r = 1, g = 0.82, b = 0 },
         slotBgAlpha = { empty = 1, filled = 1 },
@@ -120,6 +128,26 @@ local function HideNineSlice(frame)
     if not frame._gudaNineSlice then return end
     for i = 1, 8 do
         frame._gudaNineSlice[i]:Hide()
+    end
+end
+
+-- Apply or hide a TGA background texture (for themes where bgFile TGA doesn't work with SetBackdrop)
+local function ApplyBgTexture(frame, texturePath, alpha)
+    if not frame._gudaBgTex then
+        frame._gudaBgTex = frame:CreateTexture(nil, "BACKGROUND")
+    end
+    local tex = frame._gudaBgTex
+    tex:ClearAllPoints()
+    tex:SetTexture(texturePath)
+    tex:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -6)
+    tex:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -6, 6)
+    tex:SetAlpha(alpha or 1)
+    tex:Show()
+end
+
+local function HideBgTexture(frame)
+    if frame._gudaBgTex then
+        frame._gudaBgTex:Hide()
     end
 end
 
@@ -324,6 +352,17 @@ function Theme:ApplyToFrame(frame)
 
     -- Background quadrant textures (disabled for testing)
     HideBgQuadrants(frame)
+
+    -- TGA background overlay (CreateTexture, since TGA doesn't work with SetBackdrop bgFile)
+    if t.bgOverlay then
+        local transparency = 0.15
+        if addon.Modules and addon.Modules.DB then
+            transparency = addon.Modules.DB:GetSetting("bgTransparency") or 0.15
+        end
+        ApplyBgTexture(frame, t.bgOverlay, 1.0 - transparency)
+    else
+        HideBgTexture(frame)
+    end
 
     -- Background color / alpha
     local bg = t.bgColor
