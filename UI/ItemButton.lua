@@ -643,7 +643,6 @@ local function ResetButtonVisualState(self)
     if self.unusableOverlay then self.unusableOverlay:Hide() end
     HideJunkIcon(self)
     if self.categoryMarkIcon then self.categoryMarkIcon:Hide() end
-    if self.categoryMarkShadow then self.categoryMarkShadow:Hide() end
 
     -- Clear cooldown overlay
     local cd = getglobal(self:GetName().."Cooldown") or self.cooldown
@@ -1219,32 +1218,20 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
         if categoryMarkTexture then
             local iconTex = getglobal(self:GetName().."IconTexture") or getglobal(self:GetName().."Icon") or self.icon or self.Icon
             local anchor = iconTex or self
-            -- Create mark textures lazily
-            if not self.categoryMarkShadow then
-                self.categoryMarkShadow = self:CreateTexture(nil, "OVERLAY")
-                self.categoryMarkShadow:SetVertexColor(0, 0, 0, 1)
-            end
             if not self.categoryMarkIcon then
-                self.categoryMarkIcon = self:CreateTexture(nil, "OVERLAY")
+                self.categoryMarkIcon = self:CreateTexture(nil, "OVERLAY", 7)
             end
-            -- Size relative to icon (roughly 40% of icon display size)
             local markSize = math.max(10, math.floor(iconSize * 0.3)) + 3
-            local shadowSize = markSize + 2
-            self.categoryMarkShadow:SetWidth(shadowSize)
-            self.categoryMarkShadow:SetHeight(shadowSize)
-            self.categoryMarkShadow:ClearAllPoints()
-            self.categoryMarkShadow:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", 1, 1)
             self.categoryMarkIcon:SetWidth(markSize)
             self.categoryMarkIcon:SetHeight(markSize)
             self.categoryMarkIcon:ClearAllPoints()
             self.categoryMarkIcon:SetPoint("BOTTOMLEFT", anchor, "BOTTOMLEFT", 2, 2)
-            self.categoryMarkShadow:SetTexture(categoryMarkTexture)
-            self.categoryMarkShadow:Show()
             self.categoryMarkIcon:SetTexture(categoryMarkTexture)
+            self.categoryMarkIcon:SetVertexColor(1, 1, 1, 1)
+            self.categoryMarkIcon:SetAlpha(1)
             self.categoryMarkIcon:Show()
         else
             if self.categoryMarkIcon then self.categoryMarkIcon:Hide() end
-            if self.categoryMarkShadow then self.categoryMarkShadow:Hide() end
         end
 
         -- Search filtering and junk opacity
