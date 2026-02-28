@@ -43,11 +43,8 @@ local themes = {
         showHeaderButtonBg = false,
     },
     blizzard = {
-        -- Custom bank parchment texture bundled with the addon.
-        -- Blizzard's MPQ textures (UI-DialogBox-Background) don't render
-        -- when set via Lua SetBackdrop() in TurtleWoW 1.12.
-        bgTexture = "Interface\\AddOns\\Guda\\Assets\\Bank-Background",
-        bgColor = { r = 1, g = 1, b = 1 },
+        bgTexture = "Interface\\AddOns\\Guda\\Assets\\UI-Background-Marble",
+        bgColor = { r = 0.4, g = 0.4, b = 0.4 },
         bgTile = true,
         bgTileSize = 256,
         border = {
@@ -59,6 +56,13 @@ local themes = {
             edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
             edgeSize = 2,
             insets = { left = 0, right = 0, top = 0, bottom = 0 }
+        },
+        nineSlice = {
+            corner = "Interface\\AddOns\\Guda\\Assets\\NineSlice-Corner",
+            edgeH  = "Interface\\AddOns\\Guda\\Assets\\NineSlice-EdgeH",
+            edgeV  = "Interface\\AddOns\\Guda\\Assets\\NineSlice-EdgeV",
+            cornerSize = 32,
+            edgeThickness = 16,
         },
         titleColor = { r = 1, g = 0.82, b = 0 },
         slotBgAlpha = { empty = 1, filled = 1 },
@@ -113,6 +117,112 @@ local function GetBorderConfig(t)
     end
 end
 
+-- Hide NineSlice textures
+local function HideNineSlice(frame)
+    if not frame._gudaNineSlice then return end
+    for i = 1, 8 do
+        frame._gudaNineSlice[i]:Hide()
+    end
+end
+
+-- Apply NineSlice metal border using separate texture files
+-- Uses 3 TGA source files: Corner, EdgeH, EdgeV
+-- Corners are flipped via SetTexCoord (0/1 swaps only)
+local function ApplyNineSlice(frame, cfg)
+    local cs = cfg.cornerSize   -- 32
+    local et = cfg.edgeThickness -- 16
+
+    -- Create or reuse 8 textures: BL, TL, TR, BR, Bottom, Top, Left, Right
+    if not frame._gudaNineSlice then
+        frame._gudaNineSlice = {}
+        for i = 1, 8 do
+            frame._gudaNineSlice[i] = frame:CreateTexture(nil, "OVERLAY")
+        end
+    end
+
+    local ns = frame._gudaNineSlice
+
+    -- 1: Bottom-Left corner (as-is)
+    local bl = ns[1]
+    bl:ClearAllPoints()
+    bl:SetTexture(cfg.corner)
+    bl:SetWidth(cs)
+    bl:SetHeight(cs)
+    bl:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+    bl:SetTexCoord(0, 1, 0, 1)
+    bl:Show()
+
+    -- 2: Top-Left corner (flip vertically)
+    local tl = ns[2]
+    tl:ClearAllPoints()
+    tl:SetTexture(cfg.corner)
+    tl:SetWidth(cs)
+    tl:SetHeight(cs)
+    tl:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+    tl:SetTexCoord(0, 1, 1, 0)
+    tl:Show()
+
+    -- 3: Top-Right corner (flip both)
+    local tr = ns[3]
+    tr:ClearAllPoints()
+    tr:SetTexture(cfg.corner)
+    tr:SetWidth(cs)
+    tr:SetHeight(cs)
+    tr:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+    tr:SetTexCoord(1, 0, 1, 0)
+    tr:Show()
+
+    -- 4: Bottom-Right corner (flip horizontally)
+    local br = ns[4]
+    br:ClearAllPoints()
+    br:SetTexture(cfg.corner)
+    br:SetWidth(cs)
+    br:SetHeight(cs)
+    br:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+    br:SetTexCoord(1, 0, 0, 1)
+    br:Show()
+
+    -- 5: Bottom edge (stretches between BL and BR corners)
+    local bottom = ns[5]
+    bottom:ClearAllPoints()
+    bottom:SetTexture(cfg.edgeH)
+    bottom:SetHeight(et)
+    bottom:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", cs, 0)
+    bottom:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -cs, 0)
+    bottom:SetTexCoord(0, 1, 0, 1)
+    bottom:Show()
+
+    -- 6: Top edge (flip vertically)
+    local top = ns[6]
+    top:ClearAllPoints()
+    top:SetTexture(cfg.edgeH)
+    top:SetHeight(et)
+    top:SetPoint("TOPLEFT", frame, "TOPLEFT", cs, 0)
+    top:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -cs, 0)
+    top:SetTexCoord(0, 1, 1, 0)
+    top:Show()
+
+    -- 7: Left edge (stretches between TL and BL corners)
+    local left = ns[7]
+    left:ClearAllPoints()
+    left:SetTexture(cfg.edgeV)
+    left:SetWidth(et)
+    left:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -cs)
+    left:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, cs)
+    left:SetTexCoord(0, 1, 0, 1)
+    left:Show()
+
+    -- 8: Right edge (flip horizontally)
+    local right = ns[8]
+    right:ClearAllPoints()
+    right:SetTexture(cfg.edgeV)
+    right:SetWidth(et)
+    right:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, -cs)
+    right:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, cs)
+    right:SetTexCoord(1, 0, 0, 1)
+    right:Show()
+end
+
 -- Apply theme to a single frame
 function Theme:ApplyToFrame(frame)
     if not frame then
@@ -129,24 +239,42 @@ function Theme:ApplyToFrame(frame)
     ThemeDebug("  theme=%s  minimal=%s", tostring(cachedThemeName), tostring(isMinimal))
     ThemeDebug("  bgTexture=%s  tileSize=%s", tostring(t.bgTexture), tostring(t.bgTileSize))
 
-    -- Full backdrop: bgFile + border in a single SetBackdrop call.
-    local backdrop = {
-        bgFile = t.bgTexture,
-        edgeFile = borderCfg.edgeFile,
-        tile = true,
-        tileSize = t.bgTileSize,
-        edgeSize = borderCfg.edgeSize,
-        insets = {
-            left = borderCfg.insets.left,
-            right = borderCfg.insets.right,
-            top = borderCfg.insets.top,
-            bottom = borderCfg.insets.bottom,
-        }
-    }
+    -- Determine if NineSlice should be used (full border mode + theme has nineSlice config)
+    local useNineSlice = t.nineSlice and not isMinimal
 
-    frame:SetBackdrop(nil)
-    frame:SetBackdrop(backdrop)
-    ThemeDebug("  SetBackdrop done (bgFile + border)")
+    if useNineSlice then
+        -- Background only (no edgeFile), NineSlice handles the border
+        local backdrop = {
+            bgFile = t.bgTexture,
+            tile = true,
+            tileSize = t.bgTileSize,
+            edgeSize = 0,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        }
+        frame:SetBackdrop(nil)
+        frame:SetBackdrop(backdrop)
+        ApplyNineSlice(frame, t.nineSlice)
+        ThemeDebug("  SetBackdrop done (bgFile + NineSlice border)")
+    else
+        -- Standard backdrop with edgeFile border
+        local backdrop = {
+            bgFile = t.bgTexture,
+            edgeFile = borderCfg.edgeFile,
+            tile = true,
+            tileSize = t.bgTileSize,
+            edgeSize = borderCfg.edgeSize,
+            insets = {
+                left = borderCfg.insets.left,
+                right = borderCfg.insets.right,
+                top = borderCfg.insets.top,
+                bottom = borderCfg.insets.bottom,
+            }
+        }
+        frame:SetBackdrop(nil)
+        frame:SetBackdrop(backdrop)
+        HideNineSlice(frame)
+        ThemeDebug("  SetBackdrop done (bgFile + edgeFile border)")
+    end
 
     if isMinimal then
         frame:SetBackdropBorderColor(1, 1, 1, 1)
