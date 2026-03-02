@@ -371,38 +371,47 @@ local function HideInnerShadow(shadow)
 end
 
 --=====================================================
--- Quality/Quest Border — uses a second UI-EmptySlot
--- texture (QualityRing) placed slightly larger behind
--- the normal EmptySlotBg. The 2px gap between them
--- creates a thin rounded border ring, since both share
--- the same rounded corner artwork.
+-- Quality/Quest Border — rounded backdrop border overlay
+-- on top of the icon texture for a clean colored frame
 --=====================================================
-local QUALITY_RING_EXTEND = 11  -- QualityRing extends 11px past button
-local SLOT_BG_EXTEND = 9       -- EmptySlotBg extends 9px past button (2px visible border)
+local QUALITY_BORDER_SIZE = 2      -- Border thickness
+local QUALITY_BORDER_PADDING = 1   -- Inset from button edge
 
--- Show quality ring with color
-local function TintSlotBorder(button, r, g, b)
-    local ring = getglobal(button:GetName().."_QualityRing")
-    if ring then
-        ring:ClearAllPoints()
-        ring:SetPoint("TOPLEFT", button, "TOPLEFT", -QUALITY_RING_EXTEND, QUALITY_RING_EXTEND)
-        ring:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", QUALITY_RING_EXTEND, -QUALITY_RING_EXTEND)
-        ring:SetTexCoord(0, 1, 0, 1)
-        ring:SetVertexColor(r, g, b)
-        ring:SetAlpha(1)
-        ring:Show()
-        button._borderTinted = true
-    end
+local qualityBorderBackdrop = {
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    edgeSize = 12,
+    insets = { left = 0, right = 0, top = 0, bottom = 0 },
+}
+
+-- Get or create the quality border frame for a button
+local function GetQualityBorderFrame(button)
+    if button._qualityBorder then return button._qualityBorder end
+    local frame = CreateFrame("Frame", nil, button)
+    frame:SetFrameLevel(button:GetFrameLevel() + 3)
+    local pad = QUALITY_BORDER_PADDING
+    frame:SetPoint("TOPLEFT", button, "TOPLEFT", -pad, pad)
+    frame:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", pad, -pad)
+    frame:SetBackdrop(qualityBorderBackdrop)
+    frame:Hide()
+    button._qualityBorder = frame
+    return frame
 end
 
--- Hide quality ring
+-- Show quality border with color
+local function TintSlotBorder(button, r, g, b)
+    local frame = GetQualityBorderFrame(button)
+    frame:SetBackdropBorderColor(r, g, b, 1)
+    frame:Show()
+    button._borderTinted = true
+end
+
+-- Hide quality border
 local function ResetSlotBorder(button)
     if not button._borderTinted then return end
-    local ring = getglobal(button:GetName().."_QualityRing")
-    if ring then
-        ring:Hide()
-        button._borderTinted = false
+    if button._qualityBorder then
+        button._qualityBorder:Hide()
     end
+    button._borderTinted = false
 end
 
 --=====================================================

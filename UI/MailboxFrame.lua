@@ -298,10 +298,11 @@ function MailboxFrame:DisplayItems(items, charFullName, totalMails)
                 icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
                 icon:Show()
             end
-            -- Hide quality ring for mail items
+            -- Hide quality border for mail items
             if itemButton._borderTinted then
-                local ring = getglobal(itemButton:GetName().."_QualityRing")
-                if ring then ring:Hide() end
+                if itemButton._qualityBorder then
+                    itemButton._qualityBorder:Hide()
+                end
                 itemButton._borderTinted = false
             end
         end
