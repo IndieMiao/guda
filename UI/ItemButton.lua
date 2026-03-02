@@ -1857,6 +1857,33 @@ function Guda_ItemButton_OnEnter(self)
 
 	GameTooltip:Show()
 
+	-- Notify third-party tooltip addons (e.g. GFW_DisenchantPredictor, EnhTooltip)
+	-- These addons hook ContainerFrameItemButton_OnEnter which Guda's custom buttons bypass
+	if self.bagID and self.slotID and not self.otherChar and not self.isReadOnly then
+		local link = GetContainerItemLink(self.bagID, self.slotID)
+		if link then
+			local _, _, itemLink = string.find(link, "(item:%d+:%d+:%d+:%d+)")
+			if itemLink then
+				local itemName = GetItemInfo(itemLink)
+				-- GFWTooltip callback system
+				if GFWTooltip_Callbacks then
+					GameTooltip.gfwDone = nil  -- Reset so callbacks are not skipped
+					for modName, callback in pairs(GFWTooltip_Callbacks) do
+						if type(callback) == "function" then
+							callback(GameTooltip, itemName, link, "CONTAINER")
+						end
+					end
+					GameTooltip:Show()
+				end
+				-- EnhTooltip callback system
+				if EnhTooltip and EnhTooltip.TooltipCall then
+					EnhTooltip.TooltipCall(GameTooltip, itemName, link, nil, nil, self.bagID, self.slotID)
+					GameTooltip:Show()
+				end
+			end
+		end
+	end
+
 	-- Debug: print item classification info to chat when debug mode is active
 	if addon.DEBUG and self.hasItem and self.bagID and self.slotID and not self._debugPrinted then
 		local link = self.itemData and self.itemData.link or GetContainerItemLink(self.bagID, self.slotID)
