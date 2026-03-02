@@ -132,9 +132,11 @@ local function HideNineSlice(frame)
 end
 
 -- Apply or hide a TGA background texture (for themes where bgFile TGA doesn't work with SetBackdrop)
+-- Uses ARTWORK layer so it always renders above the backdrop's BACKGROUND fill,
+-- preventing the intermittent z-order issue where both share the same BACKGROUND layer.
 local function ApplyBgTexture(frame, texturePath, alpha)
     if not frame._gudaBgTex then
-        frame._gudaBgTex = frame:CreateTexture(nil, "BACKGROUND")
+        frame._gudaBgTex = frame:CreateTexture(nil, "ARTWORK")
     end
     local tex = frame._gudaBgTex
     tex:ClearAllPoints()
