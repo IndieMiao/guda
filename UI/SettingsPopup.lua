@@ -136,7 +136,7 @@ function Guda_SettingsPopup_OnShow(self)
     local bankColumns = Guda.Modules.DB:GetSetting("bankColumns") or 10
     local iconSize = Guda.Modules.DB:GetSetting("iconSize") or 37
     local iconFontSize = Guda.Modules.DB:GetSetting("iconFontSize") or 12
-    local iconSpacing = Guda.Modules.DB:GetSetting("iconSpacing") or 3
+    local iconSpacing = Guda.Modules.DB:GetSetting("iconSpacing") or 4
     local lockBags = Guda.Modules.DB:GetSetting("lockBags")
     if lockBags == nil then
         lockBags = false
@@ -600,7 +600,7 @@ function Guda_SettingsPopup_IconSpacingSlider_OnLoad(self)
     self:SetMinMaxValues(0, 20)
     self:SetValueStep(1)
 
-    local currentValue = Guda.Modules.DB:GetSetting("iconSpacing") or 3
+    local currentValue = Guda.Modules.DB:GetSetting("iconSpacing") or 4
     self:SetValue(currentValue)
 end
 

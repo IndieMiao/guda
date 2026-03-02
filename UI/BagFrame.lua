@@ -3366,14 +3366,22 @@ function BagFrame:Initialize()
 	end, "BagFrame")
 
 	-- Update when items get locked/unlocked (debounced for trading, mailing, etc.)
+	local lockUpdatePending = false
 	addon.Modules.Events:Register("ITEM_LOCK_CHANGED", function()
 		if currentViewChar then return end
 		if not Guda_BagFrame:IsShown() then return end
-		-- In Category View, just update lock states visually without full redraw
+		-- In Category View, debounce lock state updates (fires rapidly during drags)
 		local viewType = addon.Modules.DB:GetSetting("bagViewType") or "single"
 		if viewType == "category" then
-			-- Only update lock visual states, don't trigger full redraw
-			BagFrame:UpdateLockStates()
+			if not lockUpdatePending then
+				lockUpdatePending = true
+				Guda_ScheduleTimer(0.05, function()
+					lockUpdatePending = false
+					if Guda_BagFrame:IsShown() and not currentViewChar then
+						BagFrame:UpdateLockStates()
+					end
+				end)
+			end
 			return
 		end
 		-- Use slightly longer delay for lock changes in single view (they fire rapidly during drags)

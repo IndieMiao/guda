@@ -37,7 +37,7 @@ function DB:Initialize()
 				bankColumns = 10,
 				sortMethod = "quality", -- quality, name, type
 				iconSize = 37,
-				iconSpacing = 3,
+				iconSpacing = 4,
 				iconFontSize = 12,
 				showQualityBorderEquipment = true,
 				showQualityBorderOther = true,
@@ -101,7 +101,7 @@ function DB:Initialize()
 		Guda_CharDB.settings.iconSize = 37
 	end
 	if not Guda_CharDB.settings.iconSpacing then
-		Guda_CharDB.settings.iconSpacing = 3
+		Guda_CharDB.settings.iconSpacing = 4
 	end
 	if not Guda_CharDB.settings.iconFontSize then
 		Guda_CharDB.settings.iconFontSize = 12

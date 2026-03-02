@@ -1897,23 +1897,17 @@ end
 function Guda_ItemButton_OnLeave(self)
     -- Delay hide of drop indicator to allow mouse to move to indicator frame
     if activeCategoryDropIndicator == self and categoryDropIndicator and categoryDropIndicator:IsShown() then
-        -- Use OnUpdate delay to check if mouse moved to the indicator
-        local elapsed = 0
-        local checkFrame = CreateFrame("Frame")
-        checkFrame:SetScript("OnUpdate", function()
-            elapsed = elapsed + arg1
-            if elapsed >= 0.05 then
-                this:SetScript("OnUpdate", nil)
-                -- If mouse is over the indicator, don't hide
-                if categoryDropIndicator and categoryDropIndicator:IsMouseOver() then
-                    return
-                end
-                -- If mouse is over the parent button, don't hide
-                if activeCategoryDropIndicator and MouseIsOver(activeCategoryDropIndicator) then
-                    return
-                end
-                HideCategoryDropIndicator()
+        -- Use pooled timer to check if mouse moved to the indicator (avoids frame leak)
+        Guda_ScheduleTimer(0.05, function()
+            -- If mouse is over the indicator, don't hide
+            if categoryDropIndicator and categoryDropIndicator:IsMouseOver() then
+                return
             end
+            -- If mouse is over the parent button, don't hide
+            if activeCategoryDropIndicator and MouseIsOver(activeCategoryDropIndicator) then
+                return
+            end
+            HideCategoryDropIndicator()
         end)
     else
         HideCategoryDropIndicator()

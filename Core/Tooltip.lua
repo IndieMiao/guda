@@ -4,6 +4,11 @@ local addon = Guda
 local Tooltip = {}
 addon.Modules.Tooltip = Tooltip
 
+-- Reusable tables to avoid per-mouseover garbage (cleared before each use)
+local _characterCounts = {}
+local _breakdownParts = {}
+local _charParts = {}
+
 --=============================================================================
 -- Item Counting Helper Functions (extracted for clarity and reuse)
 --=============================================================================
@@ -262,8 +267,12 @@ function Tooltip:AddInventoryInfo(tooltip, link)
 	local totalBank = 0
 	local totalMail = 0
 	local totalEquipped = 0
-	local characterCounts = {}
 	local hasAnyItems = false
+
+	-- Reuse module-level tables (clear before use to avoid per-call allocation)
+	local characterCounts = _characterCounts
+	for k in pairs(characterCounts) do characterCounts[k] = nil end
+	local ccIndex = 0
 
 	local currentPlayerName = addon.Modules.DB:GetPlayerFullName()
 	local currentRealm = GetRealmName()
@@ -281,18 +290,26 @@ function Tooltip:AddInventoryInfo(tooltip, link)
 				totalBank = totalBank + bankCount
 				totalMail = totalMail + mailCount
 				totalEquipped = totalEquipped + equippedCount
-				table.insert(characterCounts, {
-					name = charData.name or charName,
-					classToken = charData.classToken,
-					bagCount = bagCount,
-					bankCount = bankCount,
-					mailCount = mailCount,
-					equippedCount = equippedCount,
-					isCurrent = isCurrentChar
-				})
+				ccIndex = ccIndex + 1
+				-- Reuse existing sub-table or create one that persists
+				if not characterCounts[ccIndex] then
+					characterCounts[ccIndex] = {}
+				end
+				local entry = characterCounts[ccIndex]
+				entry.name = charData.name or charName
+				entry.classToken = charData.classToken
+				entry.bagCount = bagCount
+				entry.bankCount = bankCount
+				entry.mailCount = mailCount
+				entry.equippedCount = equippedCount
+				entry.isCurrent = isCurrentChar
 			end
 		end
 	-- If charData is not a table (string, number, etc.), just skip it
+	end
+	-- Clean up any stale entries beyond current count
+	for i = ccIndex + 1, table.getn(characterCounts) do
+		characterCounts[i] = nil
 	end
 
 	local totalCount = totalBags + totalBank + totalMail + totalEquipped
@@ -305,16 +322,18 @@ function Tooltip:AddInventoryInfo(tooltip, link)
 		-- Inventory label in exact bag frame title color
 		tooltip:AddLine("|cFFFFD200Inventory|r")
 
-		-- Total line with cyan label and white count
+		-- Total line with cyan label and white count (reuse module-level table)
 		local totalText = "|cFF00FFFFTotal|r: |cFFFFFFFF" .. totalCount .. "|r"
-		local breakdownParts = {}
-		if totalBags > 0 then table.insert(breakdownParts, "|cFF00FFFFBags|r: |cFFFFFFFF" .. totalBags .. "|r") end
-		if totalBank > 0 then table.insert(breakdownParts, "|cFF00FFFFBank|r: |cFFFFFFFF" .. totalBank .. "|r") end
-		if totalMail > 0 then table.insert(breakdownParts, "|cFF00FFFFMail|r: |cFFFFFFFF" .. totalMail .. "|r") end
-		if totalEquipped > 0 then table.insert(breakdownParts, "|cFF00FFFFEquipped|r: |cFFFFFFFF" .. totalEquipped .. "|r") end
-		
+		local breakdownParts = _breakdownParts
+		local bpIndex = 0
+		if totalBags > 0 then bpIndex = bpIndex + 1; breakdownParts[bpIndex] = "|cFF00FFFFBags|r: |cFFFFFFFF" .. totalBags .. "|r" end
+		if totalBank > 0 then bpIndex = bpIndex + 1; breakdownParts[bpIndex] = "|cFF00FFFFBank|r: |cFFFFFFFF" .. totalBank .. "|r" end
+		if totalMail > 0 then bpIndex = bpIndex + 1; breakdownParts[bpIndex] = "|cFF00FFFFMail|r: |cFFFFFFFF" .. totalMail .. "|r" end
+		if totalEquipped > 0 then bpIndex = bpIndex + 1; breakdownParts[bpIndex] = "|cFF00FFFFEquipped|r: |cFFFFFFFF" .. totalEquipped .. "|r" end
+		for i = bpIndex + 1, table.getn(breakdownParts) do breakdownParts[i] = nil end
+
 		local breakdownText = ""
-		if table.getn(breakdownParts) > 0 then
+		if bpIndex > 0 then
 			breakdownText = "(" .. table.concat(breakdownParts, " | ") .. ")"
 		end
 		tooltip:AddDoubleLine(totalText, breakdownText, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
@@ -326,25 +345,28 @@ function Tooltip:AddInventoryInfo(tooltip, link)
 			return a.name < b.name
 		end)
 
+		-- Reuse module-level parts table for per-character breakdown
+		local parts = _charParts
 		for _, charInfo in ipairs(characterCounts) do
 			local r, g, b = GetClassColor(charInfo.classToken)
-			local countText = ""
+			local pIndex = 0
 
-			local parts = {}
 			if charInfo.bagCount > 0 then
-				table.insert(parts, "|cFF00FFFFBags|r: |cFFFFFFFF" .. charInfo.bagCount .. "|r")
+				pIndex = pIndex + 1; parts[pIndex] = "|cFF00FFFFBags|r: |cFFFFFFFF" .. charInfo.bagCount .. "|r"
 			end
 			if charInfo.bankCount > 0 then
-				table.insert(parts, "|cFF00FFFFBank|r: |cFFFFFFFF" .. charInfo.bankCount .. "|r")
+				pIndex = pIndex + 1; parts[pIndex] = "|cFF00FFFFBank|r: |cFFFFFFFF" .. charInfo.bankCount .. "|r"
 			end
 			if charInfo.mailCount > 0 then
-				table.insert(parts, "|cFF00FFFFMail|r: |cFFFFFFFF" .. charInfo.mailCount .. "|r")
+				pIndex = pIndex + 1; parts[pIndex] = "|cFF00FFFFMail|r: |cFFFFFFFF" .. charInfo.mailCount .. "|r"
 			end
 			if charInfo.equippedCount > 0 then
-				table.insert(parts, "|cFF00FFFFEquipped|r: |cFFFFFFFF" .. charInfo.equippedCount .. "|r")
+				pIndex = pIndex + 1; parts[pIndex] = "|cFF00FFFFEquipped|r: |cFFFFFFFF" .. charInfo.equippedCount .. "|r"
 			end
+			for i = pIndex + 1, table.getn(parts) do parts[i] = nil end
 
-			if getn(parts) > 0 then
+			local countText = ""
+			if pIndex > 0 then
 				countText = table.concat(parts, " | ")
 			end
 
