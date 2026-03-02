@@ -308,37 +308,39 @@ end
 -- Inner Shadow (inset quality glow, GudaBags-inspired)
 -- 4 gradient textures along edges colored by item quality
 --=====================================================
-local INNER_SHADOW_SIZE = 4
+local INNER_SHADOW_SIZE = 3
 local INNER_SHADOW_ALPHA = 0.5
+local INNER_SHADOW_INSET = 2  -- Pixels inset from icon edge so glow stays inside the slot
 
 -- Create the 4-edge inner shadow textures on a button, anchored to an icon texture
 local function CreateInnerShadow(button, anchorTo)
     local shadow = {}
+    local inset = INNER_SHADOW_INSET
     -- Top edge
     shadow.top = button:CreateTexture(nil, "ARTWORK", nil, 1)
-    shadow.top:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", 0, 0)
-    shadow.top:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", 0, 0)
+    shadow.top:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", inset, -inset)
+    shadow.top:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", -inset, -inset)
     shadow.top:SetHeight(INNER_SHADOW_SIZE)
     shadow.top:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     shadow.top:Hide()
     -- Bottom edge
     shadow.bottom = button:CreateTexture(nil, "ARTWORK", nil, 1)
-    shadow.bottom:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", 0, 0)
-    shadow.bottom:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", 0, 0)
+    shadow.bottom:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", inset, inset)
+    shadow.bottom:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", -inset, inset)
     shadow.bottom:SetHeight(INNER_SHADOW_SIZE)
     shadow.bottom:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     shadow.bottom:Hide()
     -- Left edge
     shadow.left = button:CreateTexture(nil, "ARTWORK", nil, 1)
-    shadow.left:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", 0, 0)
-    shadow.left:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", 0, 0)
+    shadow.left:SetPoint("TOPLEFT", anchorTo, "TOPLEFT", inset, -inset)
+    shadow.left:SetPoint("BOTTOMLEFT", anchorTo, "BOTTOMLEFT", inset, inset)
     shadow.left:SetWidth(INNER_SHADOW_SIZE)
     shadow.left:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     shadow.left:Hide()
     -- Right edge
     shadow.right = button:CreateTexture(nil, "ARTWORK", nil, 1)
-    shadow.right:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", 0, 0)
-    shadow.right:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", 0, 0)
+    shadow.right:SetPoint("TOPRIGHT", anchorTo, "TOPRIGHT", -inset, -inset)
+    shadow.right:SetPoint("BOTTOMRIGHT", anchorTo, "BOTTOMRIGHT", -inset, inset)
     shadow.right:SetWidth(INNER_SHADOW_SIZE)
     shadow.right:SetTexture("Interface\\ChatFrame\\ChatFrameBackground")
     shadow.right:Hide()
@@ -1141,7 +1143,12 @@ local function UpdateQualityBorder(self, itemQuality, itemLink, bagID, Utils)
             end
         end
         TintSlotBorder(self, r, g, b)
-        ShowInnerShadow(self.innerShadow, r, g, b)
+        -- Only show inner shadow for colored borders, not white (poor/common quality)
+        if r < 0.95 or g < 0.95 or b < 0.95 then
+            ShowInnerShadow(self.innerShadow, r, g, b)
+        else
+            HideInnerShadow(self.innerShadow)
+        end
     else
         ResetSlotBorder(self)
         HideInnerShadow(self.innerShadow)
@@ -1581,7 +1588,12 @@ function Guda_ItemButton_SetItem(self, bagID, slotID, itemData, isBank, otherCha
                         end
                     end
                     TintSlotBorder(self, r, g, b)
-                    ShowInnerShadow(self.innerShadow, r, g, b)
+                    -- Only show inner shadow for colored borders, not white
+                    if r < 0.95 or g < 0.95 or b < 0.95 then
+                        ShowInnerShadow(self.innerShadow, r, g, b)
+                    else
+                        HideInnerShadow(self.innerShadow)
+                    end
                     borderApplied = true
                 end
             end
