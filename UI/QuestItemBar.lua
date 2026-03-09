@@ -647,6 +647,8 @@ function QuestItemBar:Initialize()
     -- Register for events with debouncing to prevent lag on rapid bag updates
     local bagUpdatePending = false
     addon.Modules.Events:Register("BAG_UPDATE", function()
+        -- Skip updates while sorting is in progress (sort completion will trigger update)
+        if addon.Modules.SortEngine and addon.Modules.SortEngine.sortingInProgress then return end
         if bagUpdatePending then return end
         bagUpdatePending = true
         -- Debounce: wait 0.15 seconds before updating (uses pooled timer)

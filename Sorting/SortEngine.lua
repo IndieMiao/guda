@@ -1826,6 +1826,22 @@ function SortEngine:ExecuteSort(sortFunction, analyzeFunction, updateFrame, sort
 
 	addon:DebugSort("Starting %s sort (estimated: %d passes, safety limit: %d)", sortType, maxPasses, safetyLimit)
 
+	local function FinishSort()
+		if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
+		SortEngine.sortingInProgress = false
+		SortEngine:UpdateSortButtonState(false)
+		currentSortType = "bags"
+		if sortType == "bank" then
+			addon.Modules.BankScanner:ClearCache()
+		else
+			addon.Modules.BagScanner:ClearCache()
+		end
+		updateFrame()
+		-- Refresh bars that were suppressed during sorting
+		if addon.Modules.QuestItemBar then addon.Modules.QuestItemBar:Update() end
+		if addon.Modules.TrackedItemBar then addon.Modules.TrackedItemBar:Update() end
+	end
+
 	local function DoSortPass()
 		passCount = passCount + 1
 
@@ -1845,38 +1861,14 @@ function SortEngine:ExecuteSort(sortFunction, analyzeFunction, updateFrame, sort
             addon:DebugSort("%s sort complete! (%d passes, %d total moves)", sortType, passCount, totalMoves)
 
 			-- Final update (cache clearing happens after delay, uses pooled timer)
-			Guda_ScheduleTimer(0.3, function()
-				if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
-				SortEngine.sortingInProgress = false
-				SortEngine:UpdateSortButtonState(false)
-				currentSortType = "bags"  -- Reset sort context
-				-- Clear bag position cache - item properties don't change on move
-				if sortType == "bank" then
-					addon.Modules.BankScanner:ClearCache()
-				else
-					addon.Modules.BagScanner:ClearCache()
-				end
-				updateFrame()
-			end)
+			Guda_ScheduleTimer(0.3, FinishSort)
   elseif passCount >= safetyLimit then
             -- Hit safety limit but not fully sorted
             addon:DebugSort("%s sort stopped at safety limit! (%d/%d items still need sorting after %d passes)",
                 sortType, currentAnalysis.itemsOutOfPlace, currentAnalysis.totalItems, passCount)
 
 			-- Final update (cache clearing happens after delay, uses pooled timer)
-			Guda_ScheduleTimer(0.3, function()
-				if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
-				SortEngine.sortingInProgress = false
-				SortEngine:UpdateSortButtonState(false)
-				currentSortType = "bags"  -- Reset sort context
-				-- Clear bag position cache - item properties don't change on move
-				if sortType == "bank" then
-					addon.Modules.BankScanner:ClearCache()
-				else
-					addon.Modules.BagScanner:ClearCache()
-				end
-				updateFrame()
-			end)
+			Guda_ScheduleTimer(0.3, FinishSort)
   else
             -- No progress guard: stop if we make no moves repeatedly
             if moveCount == 0 then
@@ -1890,19 +1882,7 @@ function SortEngine:ExecuteSort(sortFunction, analyzeFunction, updateFrame, sort
                     sortType, passCount, currentAnalysis.itemsOutOfPlace, currentAnalysis.totalItems)
 
                 -- Final update (cache clearing happens after delay, uses pooled timer)
-                Guda_ScheduleTimer(0.3, function()
-                    if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
-                    SortEngine.sortingInProgress = false
-                    SortEngine:UpdateSortButtonState(false)
-                    currentSortType = "bags"  -- Reset sort context
-                    -- Clear bag position cache - item properties don't change on move
-                    if sortType == "bank" then
-                        addon.Modules.BankScanner:ClearCache()
-                    else
-                        addon.Modules.BagScanner:ClearCache()
-                    end
-                    updateFrame()
-                end)
+                Guda_ScheduleTimer(0.3, FinishSort)
                 return
             end
 
@@ -1918,18 +1898,7 @@ function SortEngine:ExecuteSort(sortFunction, analyzeFunction, updateFrame, sort
                 addon:DebugSort("%s sort stuck: items not decreasing after %d passes with moves (remaining: %d/%d)",
                     sortType, stuckPasses, currentAnalysis.itemsOutOfPlace, currentAnalysis.totalItems)
 
-                Guda_ScheduleTimer(0.3, function()
-                    if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
-                    SortEngine.sortingInProgress = false
-                    SortEngine:UpdateSortButtonState(false)
-                    currentSortType = "bags"
-                    if sortType == "bank" then
-                        addon.Modules.BankScanner:ClearCache()
-                    else
-                        addon.Modules.BagScanner:ClearCache()
-                    end
-                    updateFrame()
-                end)
+                Guda_ScheduleTimer(0.3, FinishSort)
                 return
             end
 
@@ -1958,16 +1927,7 @@ function SortEngine:ExecuteSort(sortFunction, analyzeFunction, updateFrame, sort
 	Guda_ScheduleTimer(hardTimeout, function()
 		if SortEngine.sortingInProgress then
 			addon:DebugSort("%s sort force-stopped after %ds timeout", sortType, hardTimeout)
-			if sfxCVar then pcall(SetCVar, sfxCVar, originalSFX) end
-			SortEngine.sortingInProgress = false
-			SortEngine:UpdateSortButtonState(false)
-			currentSortType = "bags"
-			if sortType == "bank" then
-				addon.Modules.BankScanner:ClearCache()
-			else
-				addon.Modules.BagScanner:ClearCache()
-			end
-			updateFrame()
+			FinishSort()
 		end
 	end)
 
