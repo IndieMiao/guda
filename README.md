@@ -103,7 +103,7 @@ Guda provides a modern, unified bag/bank experience with multi-character support
 3. The item appears in the Tracked Item Bar with total count
 4. Use **Shift + Left-Click** on the bar to drag it to your preferred location
 
-![Tracked Item Bar]([https://i.imgur.com/tISDLwo.png](https://github.com/user-attachments/assets/c279b906-8ab6-4c10-adb5-0faa2e33fe82))
+![Tracked Item Bar](https://github.com/user-attachments/assets/81a2a86f-f35e-4437-ae89-906ade98716d)
 
 ### Quest Item Bar
 
