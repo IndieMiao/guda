@@ -215,6 +215,9 @@ function Guda_BankFrame_OnHide(self)
     -- Cancel any pending deferred usability check (debounce safety)
     CancelBankDeferredUsabilityCheck()
 
+    -- Clear search field
+    Guda_BankFrame_ClearSearch()
+
     -- Clear recently emptied slots tracking (reset placeholders)
     BankFrame:ClearRecentlyEmptiedSlots()
 

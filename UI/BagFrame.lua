@@ -234,6 +234,9 @@ function Guda_BagFrame_OnHide(self)
 	-- Hide tooltip (it may be showing for soul bag or other footer buttons)
 	GameTooltip:Hide()
 
+    -- Clear search field
+    Guda_BagFrame_ClearSearch()
+
     -- Clear any pending update and work queue items
     pendingUpdate = false
     if addon.Modules.Utils and addon.Modules.Utils.ClearWorkQueue then

@@ -263,7 +263,7 @@
                         <Anchors>
                             <Anchor point="LEFT">
                                 <Offset>
-                                    <AbsDimension x="40" y="0"/>
+                                    <AbsDimension x="16" y="0"/>
                                 </Offset>
                             </Anchor>
                             <Anchor point="RIGHT">
@@ -294,6 +294,16 @@
                             </OnEditFocusLost>
                             <OnTextChanged>
                                 Guda_BankFrame_OnSearchChanged(this)
+                                -- Show/hide clear button based on search content
+                                local clearBtn = getglobal("Guda_BankFrame_SearchBar_ClearButton")
+                                if clearBtn then
+                                    local text = this:GetText()
+                                    if text ~= "" and text ~= "Search bank..." then
+                                        clearBtn:Show()
+                                    else
+                                        clearBtn:Hide()
+                                    end
+                                end
                             </OnTextChanged>
                             <OnEscapePressed>
                                 this:SetText("Search bank...")
@@ -307,31 +317,37 @@
                     </EditBox>
 
                     <!-- Clear Search Button -->
-                    <Button name="$parent_ClearButton">
+                    <Button name="$parent_ClearButton" hidden="true">
                         <Size>
-                            <AbsDimension x="26" y="26"/>
+                            <AbsDimension x="12" y="12"/>
                         </Size>
                         <Anchors>
-                            <Anchor point="LEFT">
+                            <Anchor point="RIGHT" relativeTo="$parent_SearchBox" relativePoint="RIGHT">
                                 <Offset>
-                                    <AbsDimension x="5" y="0"/>
+                                    <AbsDimension x="-5" y="0"/>
                                 </Offset>
                             </Anchor>
                         </Anchors>
-                        <NormalTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Up"/>
-                        <PushedTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Down"/>
-                        <HighlightTexture file="Interface\Buttons\UI-Panel-MinimizeButton-Highlight" alphaMode="ADD"/>
+                        <NormalTexture file="Interface\AddOns\Guda\Assets\close"/>
                         <Scripts>
+                            <OnLoad>
+                                local searchBox = getglobal("Guda_BankFrame_SearchBar_SearchBox")
+                                if searchBox then
+                                    this:SetFrameLevel(searchBox:GetFrameLevel() + 1)
+                                end
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.4, 0.4, 0.4) end
+                            </OnLoad>
                             <OnClick>
                                 Guda_BankFrame_ClearSearch()
                             </OnClick>
                             <OnEnter>
-                                GameTooltip:SetOwner(this, "ANCHOR_TOP")
-                                GameTooltip:SetText("Clear search bar")
-                                GameTooltip:Show()
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.7, 0.7, 0.7) end
                             </OnEnter>
                             <OnLeave>
-                                GameTooltip:Hide()
+                                local tex = this:GetNormalTexture()
+                                if tex then tex:SetVertexColor(0.4, 0.4, 0.4) end
                             </OnLeave>
                         </Scripts>
                     </Button>
