@@ -1771,15 +1771,7 @@ function Guda_ItemButton_OnEnter(self)
 	end
 
 	-- Set tooltip owner and position
-	if pfuiCursorMode then
-		-- For pfUI cursor mode, use ANCHOR_CURSOR like pfUI does
-		GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
-	else
-		-- Standard positioning relative to item button
-		GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-		GameTooltip:ClearAllPoints()
-		GameTooltip:SetPoint("BOTTOMRIGHT", self, "TOPLEFT", 10, 0)
-	end
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 
     -- Mailbox tooltip handling
     if self.isMail then
